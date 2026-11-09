@@ -237,6 +237,7 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
   <button class="btn" id="reset" hidden>還原內建資料</button>
   <button class="btn" id="recall" hidden>開啟上次匯入</button>
   <button class="btn" id="forget" hidden title="刪除存在這台電腦瀏覽器中的匯入資料">清除記憶</button>
+  <button class="btn" id="aiSum" title="把匯入的清單整理成精簡的資料夾結構摘要（.md），讓 AI 了解整體文件布置；有選單位時只含該單位">給 AI 的資料夾摘要</button>
   <input type="file" id="file" accept=".csv,text/csv" multiple hidden>
 </div>
 <div class="chips" id="chips"></div>
@@ -459,14 +460,18 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
     <li><b>試送</b>：切到試行值送幾份，確認資料夾正確後把路徑狀態改為「現有」，再切回正式值。</li>
   </ol>
 
-  <h2>請 AI 協助調整規則</h2>
+  <h2>請 AI 幫忙建立規則</h2>
+  <p>最省力的方法是用 Claude 的「<b>DocRoute 規則產生器</b>」技能：交給它檔案清單，它會自己研究、用選擇題問你，再交回兩個規則檔。</p>
   <ol>
-    <li><b>準備資料</b>：從兩個規則分頁「下載目前規則.xlsx」；挑幾份範例，從「辨識文字」複製文字，每份附上<b>期望檔名</b>與<b>期望目的資料夾</b>；必要時附標案／契約對照表、資料夾清單。</li>
-    <li><b>提出需求</b>，例如：「請依附件 規則.xlsx 與 自動歸檔規則.xlsx，讓這份文件命名為 11508監造月報A版、送到 \\伺服器\公用資料夾\監造暨品質月報；請直接修改並回傳兩個 xlsx，列出改了哪些列，且不要改變其他文件的判定結果。」</li>
-    <li><b>匯入回傳的規則</b>：各規則分頁按「匯入規則.xlsx」；用「試算」與「套用到已辨識的檔案」檢查。</li>
-    <li><b>校正</b>：把判錯的檔名與期望結果再交給 AI 調整，直到正確；最後下載保存。</li>
+    <li><b>準備</b>：檔案清單 CSV（可多份），以及兩個規則檔（「命名規則」「目的資料夾規則」分頁各按「下載目前規則.xlsx」）。</li>
+    <li><b>交給 Claude</b>，說：「幫我用這些清單建立命名和歸檔規則」。</li>
+    <li><b>回答選擇題</b>：它會先說明你們的檔案大致怎麼放，再問你要處理哪些文件、哪些代碼是標案、檔名怎麼寫、要放哪個資料夾。</li>
+    <li><b>拿回兩個規則檔</b>：它會一併告訴你「目前有多少檔案已在正確位置」，以及還要你確認的地方。</li>
+    <li><b>匯入</b>：在兩個規則分頁按「匯入規則.xlsx」，用「試算」輸入幾個檔名看看。</li>
+    <li><b>邊用邊修</b>：遇到判錯的檔案，把檔名和你要的結果丟回給 Claude，它會再問你、再修正。</li>
   </ol>
-  <p class="hint">只需提供文件首頁文字與檔名、路徑；機密文件與含個人資料的範例請先排除或遮蔽，並依機關生成式 AI 使用規範辦理。</p>
+  <p class="hint">用其他 AI、或沒有安裝技能時：另外附上「給 AI 的說明」（這份是寫給 AI 看的，你不必讀）。清單太大上傳不了時，改附「資料夾摘要」（把整個清單縮成一份資料夾樹）。只需要檔名、路徑和文件首頁文字；機密與個資請先排除，並依機關生成式 AI 使用規範辦理。</p>
+  <p><button class="btn" id="aiGuide">下載：給 AI 的說明</button>　<button class="btn" id="aiSum2">下載：資料夾摘要</button></p>
 
   <h2>隱私與使用規範</h2>
   <p>檔案只在這台電腦的瀏覽器中讀取與辨識。素材索引會把個人資料夾名稱遮蔽為○○。匯入的規則（含資料夾路徑）只存在這台電腦的瀏覽器；分享網頁或規則檔前，請確認其中的路徑可以公開。請依機關規定處理機密與個資文件。</p>
@@ -2201,7 +2206,7 @@ $('dDl').addEventListener('click', () => { if(DEST.saveT) saveDest(); saveBlob('
 
 async function saveBlob(name, blob, ext){
   if(window.showSaveFilePicker){
-    try{ const h = await showSaveFilePicker({suggestedName: name, id: 'save', types: [{description: ext === '.csv' ? 'CSV 檔' : 'Excel 檔', accept: {[blob.type || 'application/octet-stream']: [ext]}}]}); const w = await h.createWritable(); await w.write(blob); await w.close(); return h.name; }
+    try{ const h = await showSaveFilePicker({suggestedName: name, id: 'save', types: [{description: ({'.csv': 'CSV 檔', '.xlsx': 'Excel 檔', '.md': 'Markdown 文字檔'})[ext] || '檔案', accept: {[blob.type || 'application/octet-stream']: [ext]}}]}); const w = await h.createWritable(); await w.write(blob); await w.close(); return h.name; }
     catch(e){ if(e.name === 'AbortError') return null; }
   }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
@@ -2304,6 +2309,150 @@ window.DEST_READY = (async () => {
   try{ const s = await DestKV.get('destRules'); if(s && s.bytes){ await loadDest(s.bytes, s.label); return; } }catch(e){ toast('上次匯入的目的資料夾規則讀取失敗，改用內建規則'); }
   await loadDest(b64bytes(DEST_XLSX_B64), `內建 自動歸檔規則.xlsx（${DEST_XLSX_DATE}）`);
 })();
+// ===== 請 AI 協助：前置說明與資料夾結構摘要 =====
+const AI_GUIDE = "# 給 AI 的前置說明：檔案整理工具（DocRoute）規則調整\n\n請先讀完本說明，再依使用者提供的規則檔、範例與資料夾摘要調整規則。\n\n## 1. 你的任務\n\n使用者用一個離線網頁工具整理公務檔案：掃描檔先辨識文字，依「命名規則」產生建議檔名，再依「目的資料夾規則」算出要放的資料夾，最後用 PowerShell 程式碼把檔案複製過去。你要協助修改規則檔，讓指定的文件得到使用者期望的**檔名**與**目的資料夾**，並且**不要改變其他文件原本正確的結果**。\n\n## 2. 工具處理流程\n\n1. 取文字：每份讀前 3 頁；頁面有 50 字以上文字層就直接用，否則以 Tesseract（繁中＋英文）辨識。辨識文字常有錯字、中文字之間多空格、行首多出 `:` `;` `|` 等雜訊。\n2. 正規化：全形轉半形（NFKC）→ 刪除每行開頭的 `:` `;` `|` → 刪除所有空白。**之後所有比對都套用在正規化後的文字上**，所以括號、冒號請用半形 `( ) :`，關鍵字中不要放空白。\n3. 關鍵字校正 → 文字替換 → 判定文件類別 → 依命名範本組檔名。\n4. 判定不出類別或缺欄位時，會忽略文字層、改用彩色影像再辨識一次，兩次文字合併後重新判定。\n5. 用「最終檔名」（使用者可能已修改）判定目的資料夾。素材索引分頁則用原檔名判定。\n\n## 3. 命名規則（規則.xlsx）\n\n| 工作表 | 欄位 | 規則 |\n|---|---|---|\n| 文件類別 | TypeID、類別名稱、優先序、判定關鍵字、判定正則、命名範本、目標資料夾ID、啟用、需人工確認 | 只看啟用＝TRUE 的列，依「優先序」由小到大檢查；「判定關鍵字」以 `\\|` 分隔、**全部**出現才算，且「判定正則」（有填時）要命中；第一個成立的類別生效。兩欄都空白的列永遠不成立。越專一的類別優先序要越小。 |\n| 欄位擷取 | 欄位名稱、正則、輸出格式、轉換、說明、啟用 | 命名範本中的 `{欄位名稱}` 取自此表：對文字執行正則搜尋（第一個符合處）；「輸出格式」為 Python `str.format`，`{0}`＝整段、`{1}{2}`…＝括號群組，可用 `{2:0>2}` 補零；正則沒有括號時用 `{0}`。「轉換」可填「西元轉民國」（第 1 組減 1911）、「全形標點」（, : ; ( ) ? ! 轉全形）。正則留空＝文件內沒有此欄位。 |\n| 關鍵字 | KeywordID、類型、標準值、別名、最低相似度、啟用 | 4 字以上的標準值（或 `\\|` 分隔的別名）做模糊比對（相似度≥最低相似度，預設 90），把辨識錯字校正成標準值。適合放標案全名、廠商、機關名稱。 |\n| 文字替換 | ReplaceID、正則、取代為、說明、啟用 | 4 字以下、模糊比對管不到的固定錯字：正則命中處換成「取代為」（純文字，不支援 `\\1`）。 |\n| 分送對照 | （舊欄位） | 已由目的資料夾規則取代，保持空白即可。 |\n\n命名範本中任一欄位抓不到 → 不產生檔名、標「待確認」；「需人工確認」＝TRUE 的類別即使有檔名也標「待確認」。檔名中的 Windows 禁用字元 `< > : \" / \\ | ? *` 會換成 `_`，副檔名自動保留。\n\n## 4. 目的資料夾規則（自動歸檔規則*.xlsx）\n\n判定輸入是一段文字（通常是檔名）。正規化：全形轉半形、刪除空白、「第二次／第十二期／第三階段」的國字數字轉阿拉伯數字。\n\n1. **日期**：開頭的 7 碼民國日期（`^1\\d{6}`，可在「線上_數字_xxx_」前綴之後）。\n2. **案別**（工作表「案別」，啟用＝Y）：先在第一個「」內找標案代碼或別名；找不到再在全文找代碼（「代碼樣式」正則，前後不可緊接英數字）；再找別名（`|` 分隔，最長的優先，類型為「計畫」的別名最後才用）。案代碼填 `{代碼}` 的列表示代碼本身就是案代碼。「含詞轉案」如 `監造=○○監造`：只認到計畫層級但文字含「監造」時，改判為指定的案。案別決定 `{案}`、`{計畫}` 與「案類型」（施工／監造／專管／計畫）。\n3. **全域排除**：命中「排除詞」的直接採用該列的動作（不歸檔／人工）。\n4. **事件**（工作表「事件」）：先從文字刪掉案名、別名與標案代碼，得到「主句」；主句有「因…致／衍生／導致／需…」時只看後半句。依優先序取第一個「判定詞」命中、且「排除詞」未命中的事件。\n5. **次別**（工作表「次別樣式」）：在事件詞前後 20 字內找最近的「第N次」「CCO-N」「N變」「NTPN」「第N期」，補零成兩位數；估驗計價只採用「第N期」，其他事件不採用「第N期」。\n6. 階段、文種、版次、文件類別、工作代碼：只影響建議檔名，不影響資料夾。\n7. **分送規則**（工作表「分送規則」，啟用＝Y）：**由上而下取第一條符合者**。條件欄：事件（`*`＝任何事件；`（無事件）`＝沒有事件但有日期）、案類型、計畫（`*` 或空白＝不限）、需要次別（「數字」＝要有數字次別）。動作：搬移／人工／不歸檔。目的地樣板可用「根目錄」工作表的任一變數（如 `{專區}`）以及 `{計畫}`、`{案}`、`{n}`（次別，不補零）、`{法律期間}`。\n8. 「路徑狀態」＝待確認的規則不會產生送件程式碼；確認資料夾存在後才改為「現有」。\n\n## 5. 分類規則（素材索引用，.json）\n\n`project.keywords`／`codes`／`extra`：路徑含任一項即視為相關（三者皆空＝全部相關；codes 比對「代碼＋標」）。`rules`：`{cat 大類, sub 細項, kw 關鍵字陣列, scope \"path\"（整個路徑）或 \"name\"（只看檔名）}`，比對不分大小寫，可同時屬於多個細項。\n\n## 6. 正則與檔案格式限制\n\n- 正則用 **Python `re` 語法**撰寫，且必須同時能在 **JavaScript** 執行：不要用行內旗標 `(?i)`、`(?x)`、原子群組、佔有量詞、`\\p{…}`；後顧斷言 `(?<!…)`、`(?<=…)` 必須是固定長度；具名群組可用 `(?P<名稱>…)`。\n- 命名規則與目的資料夾規則的比對**區分大小寫**；需要時寫成 `[Aa]` 或列出兩種寫法。\n- 不要更改工作表名稱、欄位名稱與欄位順序；不要刪除未提到的工作表。\n- 「啟用」：命名規則用 TRUE／FALSE；目的資料夾規則用 Y／N。\n- TypeID、ReplaceID、規則ID 不可重複；新增的分送規則要放在 `*`、`（無事件）` 這類通用規則**之前**。\n- 不要猜測資料夾路徑：使用者沒有確認的路徑，「路徑狀態」一律填「待確認」，並在回覆中列為待確認事項。\n\n## 7. 回覆格式\n\n1. **修改後的檔案**：能輸出檔案時，回傳修改後的 `規則.xlsx`／`自動歸檔規則*.xlsx`（保留所有工作表）。不能輸出檔案時，以表格列出每個工作表要「新增／修改／刪除」的列，每列寫出完整欄位值，方便使用者在網頁表格或 Excel 逐格填入。\n2. **變更清單**：每一項改了哪個工作表、哪一列、為什麼。\n3. **逐一推演範例**：每個範例寫出預期的文件類別、各欄位值、檔名、案別、事件、次別、命中的分送規則 ID 與目的地。\n4. **影響評估**：哪些原本的文件可能因此改變結果、風險在哪裡。\n5. **待確認事項**：資料夾是否存在、命名慣例不明確之處，以問題列出，不要自行假設。\n\n## 8. 自我檢查清單\n\n- [ ] 每個新正則都符合第 6 節限制，並以範例文字（正規化後）實際比對過。\n- [ ] 新文件類別的優先序不會搶走其他類別的文件（判定詞夠專一）。\n- [ ] 命名範本用到的 `{欄位}` 都存在於「欄位擷取」且已啟用。\n- [ ] 分送規則順序正確：專一的在上、通用的在下。\n- [ ] 目的地樣板的變數都存在；路徑未經確認的標「待確認」。\n- [ ] 沒有更動與本次需求無關的列。\n";
+const mdCell = v => String(v === true ? 'TRUE' : v === false ? 'FALSE' : (v == null ? '' : v)).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+function mdTable(head, rows){ return ['| ' + head.join(' | ') + ' |', '|' + head.map(() => '---').join('|') + '|'].concat(rows.map(r => '| ' + r.map(mdCell).join(' | ') + ' |')).join('\n'); }
+function aiRulesSummary(){
+  const out = ['', '## 9. 目前規則摘要（由網頁自動產生，以使用者附上的規則檔為準）', ''];
+  const on = v => v === true || /^(TRUE|Y|YES|1|是)$/i.test(String(v == null ? '' : v).trim());
+  const ns = window.namingSheets ? window.namingSheets() : null;
+  if(ns){
+    const t = (ns['文件類別'] || []).filter(r => on(r['啟用']));
+    out.push('### 命名規則：文件類別（啟用中，依優先序）', '', mdTable(['TypeID', '類別名稱', '優先序', '判定關鍵字', '判定正則', '命名範本', '需人工確認'], t.slice().sort((a, b) => (+a['優先序'] || 0) - (+b['優先序'] || 0)).map(r => [r.TypeID, r['類別名稱'], r['優先序'], r['判定關鍵字'], r['判定正則'], r['命名範本'], r['需人工確認']])), '');
+    out.push('### 命名規則：欄位擷取（啟用中）', '', mdTable(['欄位名稱', '正則', '輸出格式', '轉換'], (ns['欄位擷取'] || []).filter(r => on(r['啟用'])).map(r => [r['欄位名稱'], r['正則'], r['輸出格式'], r['轉換']])), '');
+    const kw = (ns['關鍵字'] || []).filter(r => on(r['啟用'])).map(r => r['標準值']);
+    out.push('### 命名規則：關鍵字校正（啟用中）', '', kw.length ? kw.map(k => '- ' + k).join('\n') : '（無）', '');
+    const rp = (ns['文字替換'] || []).filter(r => on(r['啟用']));
+    out.push('### 命名規則：文字替換（啟用中）', '', rp.length ? mdTable(['正則', '取代為'], rp.map(r => [r['正則'], r['取代為']])) : '（無）', '');
+  }
+  if(DEST.grids){
+    const rows = n => { const g = DEST.grids[n] || []; const h = Array.from(g[0] || [], x => x == null ? '' : String(x)); return g.slice(1).filter(r => r && Array.from(r).some(v => v !== null && v !== undefined && v !== '')).map(r => Object.fromEntries(h.map((k, i) => [k, r[i]]))); };
+    out.push('### 目的資料夾規則：根目錄', '', mdTable(['變數', '試行值', '正式值'], rows('根目錄').map(r => [r['變數'], r['試行值'], r['正式值']])), `（網頁目前使用：${DEST.rootKey}）`, '');
+    out.push('### 目的資料夾規則：案別（啟用中）', '', mdTable(['案代碼', '計畫', '類型', '代碼樣式', '別名', '含詞轉案'], rows('案別').filter(r => on(r['啟用'] ?? 'Y')).map(r => [r['案代碼'], r['計畫'], r['類型'], r['代碼樣式'], r['別名'], r['含詞轉案']])), '');
+    out.push('### 目的資料夾規則：事件', '', mdTable(['名稱', '標記', '判定詞', '排除詞', '優先序'], rows('事件').map(r => [r['名稱'], r['標記'], r['判定詞'], r['排除詞'], r['優先序']])), '');
+    out.push('### 目的資料夾規則：分送規則（由上而下）', '', mdTable(['規則ID', '啟用', '事件', '案類型', '計畫', '需要次別', '動作', '目的地樣板', '路徑狀態'], rows('分送規則').map(r => [r['規則ID'], r['啟用'], r['事件'], r['案類型'], r['計畫'], r['需要次別'], r['動作'], r['目的地樣板'], r['路徑狀態']])), '');
+  }
+  return out.join('\n');
+}
+async function downloadAiGuide(){
+  if(window.ocrCommit) window.ocrCommit();
+  const name = await saveBlob(`給AI的前置說明_${nowStamp()}.md`, new Blob(['\ufeff' + AI_GUIDE + '\n' + aiRulesSummary() + '\n'], {type: 'text/markdown'}), '.md');
+  if(name) toast('已儲存 ' + name + '，請和規則檔、範例一起交給 AI');
+}
+
+// ---- 資料夾結構摘要：把數萬筆清單整理成 AI 讀得完的資料夾樹 ----
+function layoutSource(){
+  const unit = $('unit') ? $('unit').value : '';
+  if(typeof CUR_RAW !== 'undefined' && CUR_RAW && CUR_RAW.dirs){
+    const dirs = CUR_RAW.dirs, keep = dirs.map(d => !unit || d.u === unit);
+    return {label: CUR_RAW.label || '匯入的清單', partial: false, unit, dirs: dirs.map(d => ({p: d.d, a: d.a})), files: CUR_RAW.rows.filter(r => keep[r[0]]).map(r => ({di: r[0], n: r[1], t: dayNum(r[2])}))};
+  }
+  if(DB && DB.folders){
+    const keep = DB.folders.map(f => !unit || f.u === unit);
+    return {label: DB.source || '內建資料', partial: true, unit, dirs: DB.folders.map(f => ({p: f.p, a: f.a})), files: DB.files.filter(r => keep[r[0]]).map(r => ({di: r[0], n: r[1], t: r.dn || dayNum(r[2])}))};
+  }
+  return null;
+}
+function buildLayoutSummary(maxLines = 1500){
+  const src = layoutSource(); if(!src || !src.files.length) return null;
+  const segs = src.dirs.map(d => String(d.p || '').split(/[\\/]+/).filter(Boolean));
+  // 共同前綴（例如 \\伺服器\共用資料夾）
+  const used = [...new Set(src.files.map(f => f.di))];
+  let prefix = segs[used[0]] ? segs[used[0]].slice() : [];
+  for(const di of used){ const s = segs[di]; let k = 0; while(k < prefix.length && k < s.length && prefix[k] === s[k]) k++; prefix.length = k; if(!k) break; }
+  const root = {name: '', kids: new Map(), n: 0, own: 0, last: 0, samples: []};
+  const ext = new Map(); let minT = 0, maxT = 0, roc = 0, ad = 0, dup = 0, pers = 0; const codes = new Map();
+  for(const f of src.files){
+    if(src.dirs[f.di].a === '個人資料夾'){ pers++; continue; }   // 個人資料夾的內容不列入摘要
+    const s = segs[f.di].slice(prefix.length);
+    let node = root; node.n++; if(f.t > node.last) node.last = f.t;
+    for(const x of s){
+      let k = node.kids.get(x); if(!k){ k = {name: x, kids: new Map(), n: 0, own: 0, last: 0, samples: []}; node.kids.set(x, k); }
+      node = k; node.n++; if(f.t > node.last) node.last = f.t;
+    }
+    node.own++;
+    node.samples.push(f); if(node.samples.length > 12){ node.samples.sort((a, b) => b.t - a.t); node.samples.length = 3; }
+    const m = /\.([A-Za-z0-9]{1,6})$/.exec(f.n); const e = m ? m[1].toLowerCase() : '（無）'; ext.set(e, (ext.get(e) || 0) + 1);
+    if(f.t){ if(!minT || f.t < minT) minT = f.t; if(f.t > maxT) maxT = f.t; }
+    if(/^1\d{6}/.test(f.n)) roc++; else if(/^20\d{6}/.test(f.n)) ad++;
+    if(/\(\d+\)\.[^.]+$|複本|副本|複製/.test(f.n)) dup++;
+    for(const c of new Set((f.n.toUpperCase().match(/(?<![A-Z0-9])[A-Z]{1,3}\d{2,4}[A-Z]?(?![A-Z0-9])/g) || []))) codes.set(c, (codes.get(c) || 0) + 1);
+  }
+  const fmt = n => n ? fmtDay(n) : '日期不明';
+  const pct = n => (n * 100 / Math.max(1, src.files.length - pers)).toFixed(1) + '%';
+  const short = s => [...s].length > 40 ? [...s].slice(0, 39).join('') + '…' : s;
+  const junk = x => /^(thumbs\.db|desktop\.ini)$|\.(lnk|tmp|db)$|^~\$/i.test(x.n);
+  const sampleOf = k => k.samples.filter(x => !junk(x)).sort((a, b) => b.t - a.t).slice(0, 3).map(x => short(x.n));
+  // 同型資料夾（如 114年5月、114年6月…、第1期、第2期…）合併成一行，只展開一個當例子
+  const pattern = s => s.replace(/\d+/g, '#');
+  const draw = (depthMax, kidMax) => {
+    const lines = [];
+    const one = (k, depth, prefix) => {
+      let line = `${'  '.repeat(depth)}- ${prefix || ''}${k.name}（${k.n.toLocaleString()} 個檔案${k.own && k.own !== k.n ? `，本層 ${k.own.toLocaleString()}` : ''}，最近修改 ${fmt(k.last)}）`;
+      const sm = k.own ? sampleOf(k) : []; if(sm.length) line += '　例：' + sm.join('、');
+      if(depth + 1 >= depthMax && k.kids.size) line += `　〔下有 ${k.kids.size} 個子資料夾〕`;
+      lines.push(line);
+      if(depth + 1 < depthMax) walk(k, depth + 1);
+    };
+    const walk = (node, depth) => {
+      const groups = new Map();
+      for(const k of node.kids.values()){ const key = /\d/.test(k.name) ? pattern(k.name) : '\u0000' + k.name; if(!groups.has(key)) groups.set(key, []); groups.get(key).push(k); }
+      const items = [...groups.values()].map(g => g.length >= 4 ? {g, n: g.reduce((s, k) => s + k.n, 0)} : g.map(k => ({k, n: k.n}))).flat().sort((a, b) => b.n - a.n);
+      for(const it of items.slice(0, kidMax)){
+        if(it.k){ one(it.k, depth); continue; }
+        const g = it.g.slice().sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant', {numeric: true}));
+        const last = Math.max(...g.map(k => k.last)), rep = it.g.slice().sort((a, b) => b.last - a.last || b.n - a.n)[0];
+        lines.push(`${'  '.repeat(depth)}- 〔${g.length} 個同型資料夾：${g[0].name} … ${g[g.length - 1].name}〕（共 ${it.n.toLocaleString()} 個檔案，最近修改 ${fmt(last)}）　以下以「${rep.name}」為例：`);
+        one(rep, depth + 1, '例 ');
+      }
+      if(items.length > kidMax){ const rest = items.slice(kidMax); lines.push(`${'  '.repeat(depth)}- …另 ${rest.reduce((s, x) => s + (x.g ? x.g.length : 1), 0)} 個資料夾（共 ${rest.reduce((s, x) => s + x.n, 0).toLocaleString()} 個檔案）`); }
+    };
+    walk(root, 0);
+    return lines;
+  };
+  let tree = null, depthUsed = 0, kidUsed = 0;
+  outer: for(const kidMax of [30, 20, 12, 8]){
+    for(let d = 8; d >= 2; d--){ const t = draw(d, kidMax); if(t.length <= maxLines){ tree = t; depthUsed = d; kidUsed = kidMax; break outer; } }
+  }
+  if(!tree){ tree = draw(2, 10).slice(0, maxLines); depthUsed = 2; kidUsed = 10; }
+  const topExt = [...ext.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([e, n]) => `${e} ${n.toLocaleString()}（${pct(n)}）`).join('、');
+  const topCodes = [...codes.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20).map(([c, n]) => `${c}（${n.toLocaleString()}）`).join('、');
+  const folders = new Set(src.files.filter(f => src.dirs[f.di].a !== '個人資料夾').map(f => f.di)).size;
+  const md = [
+    '# 資料夾結構摘要（給 AI 參考整體文件布置）', '',
+    `- 產生時間：${new Date().toLocaleString('zh-TW', {hour12: false})}`,
+    `- 來源：${src.label}${src.unit ? `（只含單位「${src.unit}」）` : ''}${src.partial ? '（內建資料，只含與本計畫相關的檔案）' : ''}`,
+    `- 根路徑：${prefix.length ? (/^\\\\/.test(String(src.dirs[used[0]].p)) ? '\\\\' : '') + prefix.join('\\') : '（多個位置）'}`,
+    `- 檔案 ${(src.files.length - pers).toLocaleString()} 個、資料夾 ${folders.toLocaleString()} 個；最後修改日期 ${fmt(minT)} ～ ${fmt(maxT)}`,
+    `- 個人資料夾內的檔案 ${pers.toLocaleString()} 個：內容不列入本摘要（以下統計與資料夾樹都不含）`,
+    '- 交給 AI 前請先瀏覽一遍，刪除不宜提供的檔名或資料夾名稱（例如含人名、機密案名者）。', '',
+    '## 檔案類型', '', topExt, '',
+    '## 檔名樣式', '',
+    `- 以 7 碼民國日期開頭（如 1151005_…）：${roc.toLocaleString()}（${pct(roc)}）`,
+    `- 以西元日期開頭（如 20261005…）：${ad.toLocaleString()}（${pct(ad)}）`,
+    `- 疑似重複或複本（(1)、複本、副本、複製）：${dup.toLocaleString()}（${pct(dup)}）`,
+    `- 檔名中最常見的代碼（可能是標案、送審或文件編碼）：${topCodes || '（無）'}`, '',
+    `## 資料夾樹（顯示到第 ${depthUsed} 層、每層最多 ${kidUsed} 項；括號內為含子資料夾的檔案數；「例：」為該資料夾本層最近修改的檔名；名稱只差數字的同型資料夾合併成一行，並展開其中一個當例子）`, '',
+    ...tree, '',
+    '## 請 AI 協助的事項（可依需要刪改）', '',
+    '1. 依上面的資料夾樹，整理目前的文件分類邏輯（依計畫、標案、文件類型、年度…）。',
+    '2. 建議「目的資料夾規則」：案別（標案／契約代碼、全名、簡稱）與分送規則（哪類文件放哪個資料夾）；路徑請沿用現有資料夾名稱，無法確定的標「待確認」。',
+    '3. 指出命名不一致、疑似放錯位置或重複的資料夾，建議統一的命名方式。',
+    '4. 建議先處理哪幾類文件（數量多、規則明確者優先）。'
+  ].join('\n');
+  return {md, lines: tree.length, files: src.files.length - pers, unit: src.unit};
+}
+async function downloadLayoutSummary(){
+  const r = buildLayoutSummary();
+  if(!r){ toast('請先在「素材索引」匯入檔案清單 CSV'); return; }
+  const name = await saveBlob(`資料夾結構摘要_${r.unit ? r.unit + '_' : ''}${nowStamp()}.md`, new Blob(['\ufeff' + r.md + '\n'], {type: 'text/markdown'}), '.md');
+  if(name) toast(`已儲存 ${name}（${r.files.toLocaleString()} 個檔案整理成 ${r.lines.toLocaleString()} 行資料夾樹）`);
+}
+$('aiSum').addEventListener('click', downloadLayoutSummary);
+$('aiSum2').addEventListener('click', downloadLayoutSummary);
+$('aiGuide').addEventListener('click', downloadAiGuide);
+
 try{ const lt = localStorage.getItem('檔案整理_分頁'); if(lt && lt !== 'index' && TABS[lt]) showTab(lt); }catch(_){}
 </script>
 <script>
@@ -2503,6 +2652,7 @@ function renderDestBox(it){
 }
 document.addEventListener('destchange', () => { ITEMS.forEach(applyDest); renderList(); renderDetail(); });
 window.ocrCommit = () => commitEdits();
+window.namingSheets = () => RULE_SHEETS;
 
 function canvasToPng(cv, gray){
   if(gray){
