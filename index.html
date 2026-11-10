@@ -207,6 +207,17 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
 
 .edh{font-size:16px;margin:16px 0 4px;color:var(--ink)}
 
+.ocr .bulk{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:6px 0 0}
+.ocr .bulk button{font:inherit;font-size:13px;padding:4px 11px;border-radius:8px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer}
+.ocr .bulk button.sec{background:#fff;color:var(--acc2)}
+.ocr .bulk button.ghost{background:#fff;border-color:var(--line);color:var(--ink2)}
+.ocr .bulk button:disabled{opacity:.45;cursor:default}
+.ocand{margin-top:4px}
+.ocb{display:block;width:100%;text-align:left;font:inherit;font-size:13px;margin:4px 0;padding:6px 10px;border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:8px;background:#fff;color:var(--ink);cursor:pointer;word-break:break-all}
+.ocb:hover{background:#FFF1E8}
+.ocb b{color:var(--acc2);margin-right:4px}
+.ocb small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+
 </style>
 </head>
 <body>
@@ -319,6 +330,7 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
     <h2><span class="n">2</span>辨識與建議檔名</h2>
     <div class="orow">
       <button class="btn primary" id="o_run" disabled>開始辨識</button>
+      <button class="btn" id="o_keepRun" disabled title="不辨識、不改名，依原檔名判定目的資料夾，只送件">保留原檔名（不辨識）</button>
       <button class="btn" id="o_stop" hidden>停止</button>
       <label class="ochk">同時處理 <select id="o_workers"></select> 份</label>
       <div class="obar"><i id="o_barI"></i></div>
@@ -327,10 +339,11 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
   </div>
 
   <div class="ocard">
-    <h2><span class="n">3</span>訂正與確認 <span class="hint">選一筆 → 改最終檔名 → <kbd>Enter</kbd> 確認並下一筆；<kbd>PageUp</kbd>／<kbd>PageDown</kbd> 切換</span></h2>
+    <h2><span class="n">3</span>訂正與確認 <span class="hint">選一筆 → 改最終檔名 → <kbd>Enter</kbd> 確認並下一筆；<kbd>PageUp</kbd>／<kbd>PageDown</kbd> 切換；肯定正確的可用「一鍵確認」，按住 <kbd>Shift</kbd> 點勾選框可一次勾一段</span></h2>
     <div class="osplit">
       <div>
         <div class="chipset" id="o_filters"></div>
+        <div class="bulk" id="o_bulkBar"></div>
         <div class="olist" id="o_list"><div class="empty">尚未加入檔案</div></div>
       </div>
       <div class="odetail" id="o_detail" hidden>
@@ -343,7 +356,7 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
             <div class="ofld"><label for="o_fName">最終檔名</label><input type="text" class="otext" id="o_fName"><div class="owarn" id="o_fNote"></div></div>
             <div class="ofld"><label for="o_fDir">目的資料夾<small id="o_fDirNote">依「目的資料夾規則」自動算出；改檔名會重算，手動修改後不再自動更新</small></label><input type="text" class="otext" id="o_fDir"></div>
             <div class="odest" id="o_destBox"></div>
-            <div class="orow"><button class="btn primary" id="o_confirm">確認並下一筆（Enter）</button><button class="btn" id="o_unconfirm">取消確認</button><button class="btn" id="o_reocr" title="以目前規則與設定重新辨識這一份">重新辨識</button></div>
+            <div class="orow"><button class="btn primary" id="o_confirm">確認並下一筆（Enter）</button><button class="btn" id="o_unconfirm">取消確認</button><button class="btn" id="o_reocr" title="以目前規則與設定重新辨識這一份">重新辨識</button><button class="btn" id="o_useOrig" title="不改名，最終檔名改回原檔名">改用原檔名</button></div>
             <dl class="okv" id="o_kv"></dl>
             <details><summary class="hint">辨識文字（只顯示在這台電腦）</summary><textarea class="rt oraw" id="o_rawText" readonly></textarea></details>
           </div>
@@ -356,10 +369,11 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
     <h2><span class="n">4</span>輸出已確認的檔案 <span class="hint" id="o_outInfo"></span></h2>
     <div class="orow">
       <button class="btn primary" id="o_copyOut">產生送件（複製改名）的 PowerShell 程式碼</button>
+      <button class="btn" id="o_rollback" title="把上次送件的檔案退回：已刪除原檔的搬回原位置並改回原檔名；保留原檔的則移除送達的複本">退回上次送件…</button>
       <button class="btn" id="o_savePlan" hidden>儲存搬移清單 CSV…</button>
       <button class="btn" id="o_saveCsv" hidden>儲存建議命名 CSV…</button>
     </div>
-    <p class="hint" style="margin:6px 0 0">送件：預設把複本以最終檔名送到各自的目的資料夾（也可改成全部放進你選的資料夾）；原檔不動、同名檔不覆蓋。<br>沒有目的資料夾（規則判為「不歸檔」「人工」）或目的地路徑「待確認」的檔案不會送；可在右側手動填目的資料夾。</p>
+    <p class="hint" style="margin:6px 0 0">送件：預設把複本以最終檔名送到各自的目的資料夾（也可改成全部放進你選的資料夾）；同名檔不覆蓋；原檔預設保留，也可選「送達並核對無誤後刪除原檔」。送錯了可按「退回上次送件」。<br>沒有目的資料夾（規則判為「不歸檔」「人工」）或目的地路徑「待確認」的檔案不會送；可在右側手動填目的資料夾。</p>
     <div class="olog" id="o_outLog"></div>
   </div>
 </section>
@@ -389,11 +403,15 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
       <li>在視窗內按 <kbd>Ctrl</kbd>＋<kbd>V</kbd>（或按滑鼠右鍵）貼上，再按 <kbd>Enter</kbd>。</li>
       <li>送到目的資料夾：每份複製到各自的目的資料夾（不存在會自動建立），送達紀錄存在「文件\文字辨識命名工具」。選一個資料夾：執行時跳出視窗選擇，全部放在一起。</li>
     </ol>
-    <div class="row"><span>存放方式</span>
+    <div class="row" id="o_mModeRow"><span>存放方式</span>
       <label><input type="radio" name="mMode" value="dest" checked> 送到各自的「目的資料夾」</label>
       <label><input type="radio" name="mMode" value="pick"> 執行時選一個資料夾（全部放一起）</label>
     </div>
-    <p class="warn">程式只會「複製」，不會移動、修改或刪除原檔；同名檔不覆蓋。送達確認無誤後，原檔可自行刪除或保留。</p>
+    <div class="row" id="o_mDelRow"><span>原檔</span>
+      <label><input type="radio" name="mDel" value="keep" checked> 保留原檔（只複製）</label>
+      <label><input type="radio" name="mDel" value="del"> 送達並核對無誤後刪除原檔</label>
+    </div>
+    <p class="warn" id="o_mWarn"></p>
     <textarea id="o_code" readonly aria-label="PowerShell 程式碼"></textarea>
     <div class="acts"><span class="hint" id="o_mMsg"></span><button class="btn" id="o_mClose">關閉</button><button class="btn primary" id="o_mCopy">複製程式碼</button></div>
   </div>
@@ -429,13 +447,14 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
 
   <h2>送件：用 PowerShell 把檔案送到目的資料夾</h2>
   <ol>
-    <li>文字辨識命名：逐筆確認最終檔名與目的資料夾（Enter 確認並下一筆）；素材索引：用「歸檔建議」篩選後勾選檔案。</li>
+    <li>文字辨識命名：逐筆確認最終檔名與目的資料夾（Enter 確認並下一筆）；肯定正確的可按「一鍵確認『建議』」。不想改名、只要送件時，加入檔案後按「保留原檔名（不辨識）」。規則判斷不出目的資料夾時，右側會列出 3 個可能的資料夾，點選即確認（或按 <kbd>Alt</kbd>＋<kbd>1</kbd>～<kbd>3</kbd>）。素材索引：用「歸檔建議」篩選後勾選檔案。</li>
     <li>按「產生送件（複製改名）的 PowerShell 程式碼」（素材索引為下方的「送到建議位置」），選存放方式：
       <ul><li><b>送到各自的「目的資料夾」</b>（預設）：每份送到右側顯示的目的資料夾，資料夾不存在會自動建立。</li>
           <li><b>執行時選一個資料夾</b>：全部放在一起，適合收集素材；選桌面時會自動建「改名複本_日期時間」資料夾。</li></ul></li>
     <li>按「複製程式碼」→ 開始選單搜尋並開啟「<b>Windows PowerShell</b>」→ 按 <kbd>Ctrl</kbd>＋<kbd>V</kbd>（或滑鼠右鍵）貼上 → 按 <kbd>Enter</kbd>。</li>
     <li>畫面逐筆顯示「檔名 → 目的資料夾　結果」，最後列出新建立的資料夾；送達紀錄存在「文件\文字辨識命名工具\送達紀錄_日期時間.csv」。</li>
-    <li>程式只「複製」：原檔不動，目的資料夾已有同名檔時略過、不覆蓋。確認送達無誤後，原檔可自行刪除或保留。</li>
+    <li>原檔預設保留（只複製）；也可選「送達並核對無誤後刪除原檔」，程式會核對大小與內容一致才刪除。目的資料夾已有同名檔時略過、不覆蓋。</li>
+    <li><b>退回</b>：送錯時，在文字辨識命名第 4 步按「退回上次送件…」，複製程式碼到 PowerShell 執行，選要退回的那一次（直接按 Enter＝最近一次）。已刪除原檔的會搬回原位置並改回原檔名；保留原檔的會移除送達的複本；送件時新建、退回後變空的資料夾一併移除。送達後被改過的檔案不會動。</li>
   </ol>
   <p class="hint">不會送的檔案：沒有目的資料夾（規則判為「不歸檔」「人工」）、目的地路徑「待確認」、來源路徑含個人資料夾（○○）。可在右側手動填目的資料夾，或到目的資料夾規則確認路徑後改為「現有」。</p>
 
@@ -2639,6 +2658,7 @@ function applyDest(it){
 }
 function destChip(it){
   const a = it.row['分送動作']; if(!a) return '';
+  if(it.dirManual && it.row['目的資料夾']) return '<span class="ochip">指定資料夾</span>';
   return `<span class="ochip">${esc(a)}</span>`;
 }
 function renderDestBox(it){
@@ -2647,10 +2667,107 @@ function renderDestBox(it){
   box.hidden = false; box.className = 'odest' + (d.action === '搬移' ? '' : ' none');
   const head = d.action === '搬移' ? `<b>搬移</b>（規則 ${esc(d.rule)}）${d.path_status === '待確認' ? '　<span class="warn">路徑待確認</span>' : ''}` : `<b>${esc(d.action || '人工')}</b>${d.rule ? `（規則 ${esc(d.rule)}）` : ''}　${esc(d.note || d.excluded || '認不出案別或沒有對應資料夾')}`;
   const bits = [d.case && `案別 ${d.case}${d.plan && d.plan !== d.case ? '／' + d.plan : ''}`, d.event && `事件 ${d.event}${d.n ? ' ' + d.n : ''}`, d.stage && `階段 ${d.stage}`].filter(Boolean).join('　');
-  box.innerHTML = head + (bits ? `<div class="hint" style="margin:2px 0 0">${esc(bits)}</div>` : '') + (it.dirManual ? '<div class="hint" style="margin:2px 0 0">目的資料夾已手動修改，不再自動更新。<a href="#" id="o_redest">改回規則算出的位置</a></div>' : '');
+  const cands = (d.action !== '搬移' && d.action !== '不歸檔' && !it.dirManual) ? destCandidates(it) : [];
+  it.cands = cands;
+  const cHtml = cands.length ? `<div class="ocand"><div class="hint" style="margin:6px 0 4px">規則判斷不出目的資料夾，可能是下列之一（點選即確認並跳下一筆；也可按 <kbd>Alt</kbd>＋<kbd>1</kbd>～<kbd>${cands.length}</kbd>）：</div>${cands.map((c, i) => `<button type="button" class="ocb" data-cand="${i}" title="${esc(c.path)}"><b>${'①②③'[i]}</b> ${esc(shortDest(c.path))}<small>${esc(c.why)}</small></button>`).join('')}</div>`
+    : (d.action !== '搬移' && d.action !== '不歸檔' && !it.dirManual ? '<div class="hint" style="margin:4px 0 0">找不到可能的資料夾；請在上方手動填寫。匯入檔案清單 CSV 或多確認幾份後，這裡會出現建議。</div>' : '');
+  box.innerHTML = head + (bits ? `<div class="hint" style="margin:2px 0 0">${esc(bits)}</div>` : '') + cHtml + (it.dirManual ? '<div class="hint" style="margin:2px 0 0">目的資料夾已手動修改，不再自動更新。<a href="#" id="o_redest">改回規則算出的位置</a></div>' : '');
   const a = $('redest'); if(a) a.onclick = ev => { ev.preventDefault(); it.dirManual = false; applyDest(it); $('fDir').value = it.row['目的資料夾']; $('fDir').dataset.v = it.row['目的資料夾']; renderItem(it); renderDetail(); saveSession(); };
 }
 document.addEventListener('destchange', () => { ITEMS.forEach(applyDest); renderList(); renderDetail(); });
+function pickCand(i){
+  const it = ITEMS[SEL]; if(!it || !it.cands || !it.cands[i]) return;
+  $('fDir').value = it.cands[i].path; confirmNext();
+}
+$('destBox').addEventListener('click', e => { const b = e.target.closest('button[data-cand]'); if(b) pickCand(+b.dataset.cand); });
+document.addEventListener('keydown', e => { if(e.altKey && /^[123]$/.test(e.key) && !$('tab-work').hidden){ e.preventDefault(); pickCand(+e.key - 1); } });
+// ---- 判斷不出目的資料夾時的候選（規則放寬、確認過的紀錄、匯入的檔案清單） ----
+const HIST_KEY = '檔案整理_目的紀錄';
+let DEST_HIST = null;
+function histLoad(){ if(!DEST_HIST){ try{ DEST_HIST = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); }catch(_){ DEST_HIST = []; } } return DEST_HIST; }
+const CODE_RE = /(?<![A-Za-z0-9])[A-Z]{1,3}\d{2,4}[A-Z]?(?![A-Za-z0-9])/g;
+function nameFeat(name){
+  const s = String(name || '').replace(/\.[^.]+$/, '').replace(/^1\d{6}[_\-]?/, '');
+  const codes = [...new Set((s.toUpperCase().match(CODE_RE) || []))];
+  const han = s.replace(/[^\u4e00-\u9fff]+/g, ' ').split(' ').filter(Boolean);
+  const bg = new Set(); for(const w of han) for(let i = 0; i + 1 < w.length; i++) bg.add(w.slice(i, i + 2));
+  return {codes, bg};
+}
+function simFeat(a, b){
+  let inter = 0; for(const x of a.bg) if(b.bg.has(x)) inter++;
+  const uni = a.bg.size + b.bg.size - inter; const j = uni ? inter / uni : 0;
+  const c = a.codes.length && b.codes.length ? (a.codes.some(x => b.codes.includes(x)) ? 1 : -0.5) : 0;
+  return Math.max(0, j * 0.75 + c * 0.25);
+}
+function recordDest(list){
+  const h = histLoad(); let ch = false;
+  for(const it of list){
+    const p = (it.row['目的資料夾'] || '').trim(); if(!p) continue;
+    const n = it.row['最終檔名'] || ''; const d = it.dst || {};
+    const i = h.findIndex(x => x.n === n); if(i >= 0) h.splice(i, 1);
+    h.push({n, p, c: d.case || '', e: d.event || '', t: it.row['文件類別'] || '', m: it.dirManual ? 1 : 0}); ch = true;
+  }
+  if(!ch) return; if(h.length > 3000) h.splice(0, h.length - 3000);
+  try{ localStorage.setItem(HIST_KEY, JSON.stringify(h)); }catch(_){}
+}
+function destCandidates(it){
+  const name = it.row['最終檔名'] || it.rel; const d = it.dst || {}; const E = DEST.E;
+  const score = new Map();
+  const add = (p, s, why) => { p = String(p || '').replace(/[\\]+$/, ''); if(!p || /〔個人〕|○○/.test(p)) return; const o = score.get(p.toLowerCase()); if(o){ o.s += s; if(s > o.best){ o.best = s; o.why = why; } } else score.set(p.toLowerCase(), {path: p, s, best: s, why}); };
+  // 1) 規則放寬：已認出案別或事件時，套用條件相近的分送規則；缺的變數就放到上一層
+  if(E && (d.case || d.event)){
+    const vals = {...Object.fromEntries(Object.entries(E.roots).filter(([k]) => k && k !== 'null')), '計畫': d.plan, '案': d.case, 'n': /^\d+$/.test(d.n) ? String(parseInt(d.n, 10)) : d.n};
+    // 沒認出事件時，用檔名與各事件判定詞的相似度排序（例如檔名有「變更」→ 契約變更優先）
+    const evHint = {};
+    if(!d.event){
+      const nm = String(name);
+      for(const e of E.events){
+        const words = (String(e['名稱'] || '') + '|' + String(e['判定詞'] || '')).split(/[^\u4e00-\u9fff]+/).filter(w => w.length >= 2);
+        let h = 0; for(const w of words){ if(nm.includes(w)) h = Math.max(h, 1); else { let k = 0; for(let i = 0; i + 1 < w.length; i++) if(nm.includes(w.slice(i, i + 2))) k++; h = Math.max(h, w.length > 1 ? 0.6 * k / (w.length - 1) : 0); } }
+        evHint[e['名稱']] = h;
+      }
+    }
+    E.routes.forEach((r, idx) => {
+      if(r['動作'] !== '搬移') return;
+      const ev = r['事件']; if(ev === '（無事件）' || ev === '*') return;
+      const evOk = d.event ? ev === d.event : true;
+      const ctOk = r['案類型'] === '*' || r['案類型'] === null || !d.case || r['案類型'] === d.ctype;
+      const plOk = r['計畫'] === '*' || r['計畫'] === null || !d.plan || r['計畫'] === d.plan;
+      if(!evOk || !ctOk || !plOk) return;
+      if(!d.case && !d.event) return;
+      const segs = String(r['目的地樣板']).split('\\'); const out = [];
+      for(const sg of segs){ let bad = false; const v = sg.replace(/\{([^{}]+)\}/g, (m, k) => { const x = vals[k]; if(x === undefined || x === null || x === '' || k === '法律期間'){ bad = true; return m; } return String(x); }); if(bad) break; out.push(v); }
+      if(out.length < 2) return;
+      const full = out.length === segs.length;
+      const hint = d.event ? 1 : (evHint[ev] || 0);
+      if(!d.event && hint < 0.3) return;
+      const s = (d.event && d.case ? 0.9 : d.case ? 0.45 + 0.35 * hint : 0.5) * (full ? 1 : 0.85) * (r['路徑狀態'] === '待確認' ? 0.7 : 1) - idx * 0.002;
+      add(out.join('\\'), s, (d.event ? `事件「${d.event}」` : `案別 ${d.case}，檔名像「${ev}」`) + `，依規則 ${r['規則ID']}` + (full ? '' : '（缺' + (d.case ? '次別' : '案別') + '，放上一層）') + (r['路徑狀態'] === '待確認' ? '，路徑待確認' : ''));
+    });
+  }
+  const q = nameFeat(name);
+  // 2) 你確認過的類似檔案
+  const byP = new Map();
+  for(const h of histLoad()){
+    let s = simFeat(q, nameFeat(h.n)); if(d.case && h.c === d.case) s += 0.2; if(d.event && h.e === d.event) s += 0.15;
+    if(s < 0.3) continue;
+    const o = byP.get(h.p) || {s: 0, n: 0}; o.s = Math.max(o.s, s); o.n++; byP.set(h.p, o);
+  }
+  for(const [p, o] of byP) add(p, Math.min(1, o.s) * 0.8 * (1 + 0.08 * Math.min(o.n - 1, 5)), `你確認過 ${o.n} 份類似的檔案放這裡`);
+  // 3) 匯入的檔案清單：名稱相近的檔案目前放在哪裡（排除個人資料夾）
+  if(typeof CUR_RAW !== 'undefined' && CUR_RAW && CUR_RAW.rows && (q.bg.size >= 2 || q.codes.length)){
+    const top = []; const rows = CUR_RAW.rows, dirs = CUR_RAW.dirs;
+    for(let k = 0; k < rows.length; k++){
+      const dd = dirs[rows[k][0]]; if(!dd || dd.m || dd.a === '個人資料夾') continue;
+      const s = simFeat(q, nameFeat(rows[k][1])); if(s < 0.35) continue;
+      top.push([s, dd.d]);
+    }
+    top.sort((a, b) => b[0] - a[0]); const T = top.slice(0, 40); const byD = new Map();
+    for(const [s, p] of T){ const o = byD.get(p) || {s: 0, n: 0}; o.s = Math.max(o.s, s); o.n++; byD.set(p, o); }
+    for(const [p, o] of byD) add(p, o.s * 0.7 * (0.6 + 0.4 * o.n / T.length) , `名稱相近的檔案有 ${o.n} 份在這裡`);
+  }
+  return [...score.values()].sort((a, b) => b.s - a.s).slice(0, 3);
+}
 window.ocrCommit = () => commitEdits();
 window.namingSheets = () => RULE_SHEETS;
 
@@ -2772,12 +2889,13 @@ function updateProg(){
   const todo = ITEMS.filter(i => i.status === '待處理').length;
   $('run').disabled = RUNNING || !todo;
   $('run').textContent = done && todo ? `繼續辨識（剩 ${todo} 份）` : '開始辨識';
+  if($('keepRun')){ $('keepRun').disabled = RUNNING || !todo; $('keepRun').textContent = todo ? `保留原檔名（不辨識）${todo} 份` : '保留原檔名（不辨識）'; }
   if(!RUNNING) $('prog').textContent = ITEMS.length ? `共 ${ITEMS.length} 份，已完成 ${done} 份` + (todo ? `，待處理 ${todo} 份` : '') : '尚未加入檔案';
   const conf = ITEMS.filter(i => i.row['確認'] === 'Y').length;
   $('outInfo').textContent = `已確認 ${conf} 份`;
 }
 async function processItem(it){
-  const t0 = performance.now(); const row = it.row;
+  const t0 = performance.now(); const row = it.row; it.keep = false;
   for(const c of Engine.COLUMNS.concat(['分送規則', '分送動作'])) if(!['原始檔案', '確認'].includes(c)) row[c] = '';
   row['確認'] = '';
   try{
@@ -2829,6 +2947,18 @@ async function runAll(list){
   if(SEL >= 0) renderDetail();
 }
 $('run').onclick = () => runAll(ITEMS.filter(i => i.status === '待處理'));
+// 保留原檔名：不辨識，最終檔名＝原檔名，目的資料夾依原檔名判定（只送件、不改名）
+const baseName = it => it.rel.split(/[\\/]/).pop();
+function keepName(it){
+  const row = it.row;
+  for(const c of Object.keys(row)) if(!['原始檔案', '確認'].includes(c)) row[c] = '';
+  it.keep = true; it.raw = ''; it.dirManual = false;
+  row['最終檔名'] = baseName(it); row['文件類別'] = '（保留原檔名）'; row['文字來源'] = '未辨識';
+  it.status = '待確認'; row['狀態'] = '待確認';
+  if(typeof applyDest === 'function'){ applyDest(it); if(row['分送動作'] === '搬移'){ it.status = '建議'; row['狀態'] = '建議'; } }
+}
+if($('keepRun')) $('keepRun').onclick = () => { if(RUNNING) return; const l = ITEMS.filter(i => i.status === '待處理'); l.forEach(keepName); renderList(); renderDetail(); updateProg(); saveSession(); };
+if($('useOrig')) $('useOrig').onclick = () => { const it = ITEMS[SEL]; if(!it || RUNNING) return; if(!it.raw){ keepName(it); renderItem(it); renderDetail(); updateProg(); saveSession(); return; } $('fName').value = baseName(it); noteName(); commitEdits(); renderDetail(); };
 $('stop').onclick = () => { STOP = true; $('prog').textContent = '停止中（等目前這幾份完成）…'; };
 $('reocr').onclick = () => { const it = ITEMS[SEL]; if(it && !RUNNING){ it.status = '待處理'; runAll([it]); } };
 (() => { const cores = navigator.hardwareConcurrency || 4; const max = Math.max(1, Math.min(8, cores - 1)); const def = Math.min(max, lsGet('同時處理', Math.min(4, Math.max(1, Math.floor(cores / 2)))));
@@ -2844,7 +2974,43 @@ function match(it){
     default: return true;
   }
 }
+// 一鍵確認：只動「可確認」的檔案（已辨識、檔名合法）；可復原上一步
+let LAST_BULK = null, LAST_CLICK = -1;
+const canConfirm = it => !['待處理', '處理中', '錯誤'].includes(it.status) && validName(it.row['最終檔名']).ok;
+function bulkSets(){
+  const sugg = ITEMS.filter(it => it.status === '建議' && it.row['確認'] !== 'Y' && canConfirm(it));
+  const vis = ITEMS.filter(it => match(it) && it.row['確認'] !== 'Y' && canConfirm(it));
+  const un = ITEMS.filter(it => match(it) && it.row['確認'] === 'Y');
+  return {sugg, vis, un};
+}
+function renderBulk(){
+  const el = $('bulkBar'); if(!el) return;
+  if(!ITEMS.length){ el.innerHTML = ''; return; }
+  const {sugg, vis, un} = bulkSets(); const b = [];
+  b.push(`<button data-b="sugg" ${sugg.length ? '' : 'disabled'} title="狀態為「建議」：判定出文件類別、命名範本的欄位都抓到，且不屬於一律人工確認的類別">✔ 一鍵確認「建議」${sugg.length} 份</button>`);
+  if(FILTER !== '建議' && FILTER !== '已確認' && vis.length && vis.length !== sugg.length) b.push(`<button class="sec" data-b="vis" title="確認目前篩選中、還沒確認且檔名合法的檔案（含待確認）">確認目前清單 ${vis.length} 份</button>`);
+  if(un.length) b.push(`<button class="ghost" data-b="un">取消目前清單的確認 ${un.length} 份</button>`);
+  if(LAST_BULK) b.push(`<button class="ghost" data-b="undo">↶ 復原（${esc(LAST_BULK.label)}）</button>`);
+  el.innerHTML = b.join('');
+}
+function bulkSet(list, val, label){
+  if(!list.length) return;
+  commitEdits();
+  LAST_BULK = {label: `${label} ${list.length} 份`, prev: list.map(it => [it, it.row['確認']])};
+  for(const it of list) it.row['確認'] = val;
+  if(val === 'Y' && typeof recordDest === 'function') recordDest(list);
+  renderList(); renderDetail(); updateProg(); saveSession();
+}
+$('bulkBar').onclick = e => {
+  const b = e.target.closest('button[data-b]'); if(!b || b.disabled) return;
+  const k = b.dataset.b, s = bulkSets();
+  if(k === 'sugg') bulkSet(s.sugg, 'Y', '確認「建議」');
+  else if(k === 'vis') bulkSet(s.vis, 'Y', '確認目前清單');
+  else if(k === 'un') bulkSet(s.un, '', '取消確認');
+  else if(k === 'undo' && LAST_BULK){ for(const [it, v] of LAST_BULK.prev) it.row['確認'] = v; LAST_BULK = null; renderList(); renderDetail(); updateProg(); saveSession(); }
+};
 function renderFilters(){
+  renderBulk();
   const cnt = f => { const s = FILTER; FILTER = f; const n = ITEMS.filter(match).length; FILTER = s; return n; };
   $('filters').innerHTML = FILTERS.map(f => `<button class="chip${f === FILTER ? ' on' : ''}" data-f="${f}">${f} ${cnt(f)}</button>`).join('');
 }
@@ -2865,6 +3031,11 @@ function renderItem(it){
 }
 $('list').onclick = e => {
   const c = e.target.closest('input[data-c]');
+  if(c && e.shiftKey && LAST_CLICK >= 0 && LAST_CLICK !== +c.dataset.c){
+    const v = visibleIdx(), a = v.indexOf(LAST_CLICK), z = v.indexOf(+c.dataset.c);
+    if(a >= 0 && z >= 0){ const list = v.slice(Math.min(a, z), Math.max(a, z) + 1).map(i => ITEMS[i]).filter(it => c.checked ? canConfirm(it) && it.row['確認'] !== 'Y' : it.row['確認'] === 'Y'); LAST_CLICK = +c.dataset.c; bulkSet(list, c.checked ? 'Y' : '', c.checked ? '勾選一段' : '取消一段'); return; }
+  }
+  if(c) LAST_CLICK = +c.dataset.c;
   if(c){ const it = ITEMS[+c.dataset.c]; if(c.checked && !validName(it.row['最終檔名']).ok){ c.checked = false; select(+c.dataset.c); $('fName').focus(); return; } it.row['確認'] = c.checked ? 'Y' : ''; renderItem(it); if(+c.dataset.c === SEL) renderDetail(); updateProg(); saveSession(); return; }
   const d = e.target.closest('.item'); if(d) select(+d.dataset.i);
 };
@@ -2889,13 +3060,14 @@ function renderDetail(){
     if(el.dataset.id !== String(it.id) || el.value === el.dataset.v){ el.value = r[key]; el.dataset.v = r[key]; el.dataset.id = it.id; }
   }
   noteName();
-  const kv = [['原始檔案', it.rel], ['狀態', it.status + (r['確認'] === 'Y' ? '（已確認）' : '')], ['文件類別', r['文件類別']], ['建議檔名', r['建議檔名']], ['缺少欄位', r['缺少欄位']], ['擷取欄位', r['擷取欄位']], ['關鍵字校正', r['關鍵字校正']], ['文字來源', r['文字來源'] && `${r['文字來源']}，${r['OCR頁數']} 頁，${r['OCR秒數']} 秒`]];
+  const kv = [['原始檔案', it.rel], ['狀態', it.status + (r['確認'] === 'Y' ? '（已確認）' : '')], ['文件類別', r['文件類別']], ['建議檔名', r['建議檔名']], ['缺少欄位', r['缺少欄位']], ['擷取欄位', r['擷取欄位']], ['關鍵字校正', r['關鍵字校正']], ['文字來源', r['文字來源'] && (r['OCR頁數'] ? `${r['文字來源']}，${r['OCR頁數']} 頁，${r['OCR秒數']} 秒` : r['文字來源'])]];
   $('kv').innerHTML = kv.filter(([, v]) => v !== '' && v != null).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
   $('rawText').value = it.raw || '';
   renderDestBox(it);
   $('unconfirm').hidden = r['確認'] !== 'Y';
   const busy = ['待處理', '處理中'].includes(it.status);
-  $('confirm').disabled = busy; $('reocr').disabled = RUNNING;
+  $('confirm').disabled = busy; $('reocr').disabled = RUNNING; $('reocr').textContent = it.keep ? '辨識這一份（建議新檔名）' : '重新辨識';
+  if($('useOrig')){ $('useOrig').hidden = busy || it.keep; $('useOrig').disabled = RUNNING; }
   showPreview(it);
 }
 function noteName(){ const it = ITEMS[SEL]; if(!it) return; const v = validName($('fName').value); $('fNote').textContent = v.msg || (it.row['缺少欄位'] || ''); }
@@ -2932,7 +3104,7 @@ function confirmNext(){
   const it = ITEMS[SEL]; if(!it || ['待處理', '處理中'].includes(it.status)) return;
   const v = validName($('fName').value);
   if(!v.ok){ $('fNote').textContent = '還不能確認：' + v.msg; $('fName').focus(); return; }
-  commitEdits(); it.row['確認'] = 'Y'; renderItem(it); updateProg(); saveSession();
+  commitEdits(); it.row['確認'] = 'Y'; if(typeof recordDest === 'function') recordDest([it]); renderItem(it); updateProg(); saveSession();
   const vis = visibleIdx(); const p = vis.indexOf(SEL);
   if(p >= 0 && p < vis.length - 1) select(vis[p + 1]); else if(vis.includes(SEL)) renderDetail(); else if(vis.length) select(vis[Math.min(p < 0 ? 0 : p, vis.length - 1)]); else renderDetail();
 }
@@ -2971,13 +3143,30 @@ const finalName = it => { let n = it.row['最終檔名'].trim().replace(/[<>:"/\
 const basePath = () => $('basePath').value.trim().replace(/[\\/]+$/, '');
 const fullPath = it => it.src.kind === 'handle' && basePath() ? basePath() + '\\' + it.rel : '';
 const psQ = s => "'" + String(s).replace(/'/g, "''") + "'";
-function buildDestPs(list){
+// 送件共用：記錄要新建的資料夾（退回時移除）、核對後刪除原檔、送達紀錄
+const PS_MKDIR = `function New-DirChain($p) { $todo = @(); $q = $p; while ($q -and -not (Test-Path -LiteralPath $q -PathType Container)) { $todo += $q; $q = Split-Path -Parent $q }; if ($todo.Count) { New-Item -ItemType Directory -Force -Path $p -ErrorAction Stop | Out-Null }; return ($todo -join ';') }`;
+const PS_DEL = `if ($del -and $res -eq '已複製') {
+      try {
+        if ((Get-Item -LiteralPath $target).Length -eq (Get-Item -LiteralPath $src).Length -and (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash -eq (Get-FileHash -LiteralPath $src -Algorithm SHA256).Hash) { Remove-Item -LiteralPath $src -Force -ErrorAction Stop; $res = '已送達，原檔已刪除'; $gone = 'Y' }
+        else { $res = '已複製（核對不符，原檔保留）' }
+      } catch { $res = '已複製（刪除原檔失敗，原檔保留：' + $_.Exception.Message + '）' }
+    }`;
+const PS_LOG = `$docs = [Environment]::GetFolderPath('MyDocuments'); if (-not $docs) { $docs = $HOME }
+$logDir = Join-Path $docs '文字辨識命名工具'
+New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+$log = Join-Path $logDir ('送達紀錄_' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '.csv')
+$enc = $(if ($PSVersionTable.PSVersion.Major -ge 6) { 'utf8BOM' } else { 'UTF8' })   # 讓 Excel 直接開不亂碼
+$map | Export-Csv -LiteralPath $log -NoTypeInformation -Encoding $enc`;
+const delNote = del => del ? '# 送達後會核對大小與內容（SHA256）一致才刪除原檔；不一致時保留原檔。送錯可在網頁按「退回上次送件」搬回。' : '# 只會複製，不會移動、修改或刪除原檔。';
+function buildDestPs(list, del){
   const d = new Date();
   const lines = list.map(it => [it.rel, finalName(it), it.row['文件類別'] || '', it.row['目的資料夾'].trim().replace(/[\\/]+$/, '')].join('|'));
   return `# 文字辨識命名工具：複製改名後送到目的資料夾（由網頁產生，${d.toLocaleString('zh-TW', {hour12: false})}，共 ${list.length} 份）
-# 只會複製，不會移動、修改或刪除原檔；目的資料夾已有同名檔時不覆蓋；目的資料夾不存在時會自動建立。
-# 請在「Windows PowerShell」貼上後按 Enter。
+${delNote(del)}
+# 目的資料夾已有同名檔時不覆蓋；目的資料夾不存在時會自動建立。請在「Windows PowerShell」貼上後按 Enter。
 & {
+$del = $${del ? 'true' : 'false'}
+${PS_MKDIR}
 $base = ${psQ(basePath())}
 while (-not $base -or -not (Test-Path -LiteralPath $base -PathType Container)) {
   if ($base) { Write-Host "找不到來源資料夾：$base" -ForegroundColor Yellow }
@@ -2997,43 +3186,40 @@ foreach ($row in $rows) {
   $i++
   $rel, $new, $kind, $dir = $row.Split('|')
   Write-Progress -Activity '送到目的資料夾' -Status "$i / $($rows.Count)　$new" -PercentComplete ([int]($i * 100 / [math]::Max($rows.Count, 1)))
-  $src = Join-Path $base $rel; $target = Join-Path $dir $new
+  $src = Join-Path $base $rel; $target = Join-Path $dir $new; $gone = ''; $nd = ''
   if (-not (Test-Path -LiteralPath $src -PathType Leaf)) { $res = '略過：找不到原檔（可能已搬移或改名）'; $skip++ }
   elseif ($used.Contains($target)) { $res = '略過：與同批另一份的目的地相同'; $skip++ }
   elseif (Test-Path -LiteralPath $target) { $res = '略過：目的資料夾已有同名檔（不覆蓋）'; $skip++ }
   else {
     try {
-      if (-not (Test-Path -LiteralPath $dir -PathType Container)) { New-Item -ItemType Directory -Force -Path $dir -ErrorAction Stop | Out-Null; [void]$made.Add($dir) }
+      $nd = New-DirChain $dir; if ($nd) { [void]$made.Add($dir) }
       Copy-Item -LiteralPath $src -Destination $target -ErrorAction Stop; $res = '已複製'; $ok++
     } catch { $res = '失敗：' + $_.Exception.Message; $skip++ }
+    ${PS_DEL}
   }
   [void]$used.Add($target)
-  $map.Add([pscustomobject]@{ '最終檔名' = $new; '目的資料夾' = $dir; '原始檔案' = $rel; '原路徑' = $src; '文件類別' = $kind; '結果' = $res })
-  Write-Host "$new → $dir　$res" -ForegroundColor $(if ($res -eq '已複製') { 'Gray' } else { 'Yellow' })
+  $map.Add([pscustomobject]@{ '最終檔名' = $new; '目的資料夾' = $dir; '原始檔案' = $rel; '原路徑' = $src; '文件類別' = $kind; '結果' = $res; '送達路徑' = $(if ($res -like '已*') { $target } else { '' }); '原檔已刪除' = $gone; '新建資料夾' = $nd })
+  Write-Host "$new → $dir　$res" -ForegroundColor $(if ($res -like '已*') { 'Gray' } else { 'Yellow' })
 }
 Write-Progress -Activity '送到目的資料夾' -Completed
-$docs = [Environment]::GetFolderPath('MyDocuments'); if (-not $docs) { $docs = $HOME }
-$logDir = Join-Path $docs '文字辨識命名工具'
-New-Item -ItemType Directory -Force -Path $logDir | Out-Null
-$log = Join-Path $logDir ('送達紀錄_' + (Get-Date -Format 'yyyyMMdd_HHmm') + '.csv')
-$enc = $(if ($PSVersionTable.PSVersion.Major -ge 6) { 'utf8BOM' } else { 'UTF8' })   # 讓 Excel 直接開不亂碼
-$map | Export-Csv -LiteralPath $log -NoTypeInformation -Encoding $enc
+${PS_LOG}
 Write-Host ''
 Write-Host "完成：已送達 $ok / $($rows.Count) 份" -ForegroundColor Green
 if ($made.Count) { Write-Host "新建立的資料夾：$($made -join '；')" -ForegroundColor Cyan }
 if ($skip) { Write-Host "有 $skip 份未送達，原因請看 $log" -ForegroundColor Yellow } else { Write-Host "送達紀錄：$log" }
-$dirs = @($map | Where-Object { $_.'結果' -eq '已複製' } | ForEach-Object { $_.'目的資料夾' } | Select-Object -Unique)
+$dirs = @($map | Where-Object { $_.'結果' -like '已*' } | ForEach-Object { $_.'目的資料夾' } | Select-Object -Unique)
 if ($dirs.Count -eq 1) { Invoke-Item -LiteralPath $dirs[0] }
 }
 `;
 }
-function buildPs(list){
+function buildPs(list, del){
   const d = new Date(), ymd = stamp(d).slice(0, 8);
   const lines = list.map(it => [it.rel, finalName(it), it.row['文件類別'] || ''].join('|'));
   return `# 文字辨識命名工具：複製並改名（由網頁產生，${d.toLocaleString('zh-TW', {hour12: false})}，共 ${list.length} 份）
-# 只會複製，不會移動、修改或刪除原檔；存放資料夾已有同名檔時不覆蓋。
-# 請在「Windows PowerShell」貼上後按 Enter。
+${delNote(del)}
+# 存放資料夾已有同名檔時不覆蓋。請在「Windows PowerShell」貼上後按 Enter。
 & {
+$del = $${del ? 'true' : 'false'}
 $memo = Join-Path $(if ($env:APPDATA) { $env:APPDATA } else { $HOME }) '文字辨識命名工具\\上次存放位置.txt'
 $last = ''; try { if (Test-Path -LiteralPath $memo) { $last = (Get-Content -LiteralPath $memo -Raw -Encoding UTF8).Trim() } } catch { }
 $base = ${psQ(basePath())}
@@ -3073,34 +3259,94 @@ foreach ($row in $rows) {
   $i++
   $rel, $new, $kind = $row.Split('|')
   Write-Progress -Activity '複製並改名中' -Status "$i / $($rows.Count)　$new" -PercentComplete ([int]($i * 100 / [math]::Max($rows.Count, 1)))
-  $src = Join-Path $base $rel; $target = Join-Path $dest $new
+  $src = Join-Path $base $rel; $target = Join-Path $dest $new; $gone = ''
   if (-not (Test-Path -LiteralPath $src -PathType Leaf)) { $res = '略過：找不到原檔（可能已搬移或改名）'; $skip++ }
   elseif ($used.Contains($new)) { $res = '略過：與同批另一份的檔名相同'; $skip++ }
   elseif (Test-Path -LiteralPath $target) { $res = '略過：存放資料夾已有同名檔（不覆蓋）'; $skip++ }
   else {
     try { Copy-Item -LiteralPath $src -Destination $target -ErrorAction Stop; $res = '已複製'; $ok++ }
     catch { $res = '失敗：' + $_.Exception.Message; $skip++ }
+    ${PS_DEL}
   }
   [void]$used.Add($new)
-  $map.Add([pscustomobject]@{ '最終檔名' = $new; '原始檔案' = $rel; '原路徑' = $src; '文件類別' = $kind; '結果' = $res })
-  if ($res -ne '已複製') { Write-Host "$new　$res" -ForegroundColor Yellow }
+  $map.Add([pscustomobject]@{ '最終檔名' = $new; '目的資料夾' = $dest; '原始檔案' = $rel; '原路徑' = $src; '文件類別' = $kind; '結果' = $res; '送達路徑' = $(if ($res -like '已*') { $target } else { '' }); '原檔已刪除' = $gone; '新建資料夾' = '' })
+  if ($res -notlike '已*') { Write-Host "$new　$res" -ForegroundColor Yellow }
 }
 Write-Progress -Activity '複製並改名中' -Completed
-$log = Join-Path $dest ('檔名對照表_' + (Get-Date -Format 'yyyyMMdd_HHmm') + '.csv')
-$enc = $(if ($PSVersionTable.PSVersion.Major -ge 6) { 'utf8BOM' } else { 'UTF8' })   # 讓 Excel 直接開不亂碼
-$map | Export-Csv -LiteralPath $log -NoTypeInformation -Encoding $enc
+${PS_LOG}
+$table = Join-Path $dest ('檔名對照表_' + (Get-Date -Format 'yyyyMMdd_HHmm') + '.csv')
+$map | Select-Object '最終檔名', '原始檔案', '原路徑', '文件類別', '結果' | Export-Csv -LiteralPath $table -NoTypeInformation -Encoding $enc
 Write-Host ''
 Write-Host "完成：已複製 $ok / $($rows.Count) 份到 $dest" -ForegroundColor Green
-if ($skip) { Write-Host "有 $skip 份未複製，原因請看 $log" -ForegroundColor Yellow }
+if ($skip) { Write-Host "有 $skip 份未複製，原因請看 $table" -ForegroundColor Yellow }
 Invoke-Item -LiteralPath $dest
 }
 `;
 }
+function buildRollbackPs(){
+  return `# 檔案整理工具：退回送件（由網頁產生，${new Date().toLocaleString('zh-TW', {hour12: false})}）
+# 讀取「文件\\文字辨識命名工具」的送達紀錄，選一次送件退回：
+#   原檔已刪除的 → 把送達的檔案搬回原位置、改回原檔名；原檔還在的 → 核對內容相同後移除送達的複本。
+#   送件時新建、退回後變空的資料夾會一併移除。請在「Windows PowerShell」貼上後按 Enter。
+& {
+$docs = [Environment]::GetFolderPath('MyDocuments'); if (-not $docs) { $docs = $HOME }
+$logDir = Join-Path $docs '文字辨識命名工具'
+$logs = @(Get-ChildItem -LiteralPath $logDir -Filter '送達紀錄_*.csv' -File -ErrorAction SilentlyContinue | Where-Object { $_.BaseName -notlike '*_已退回' } | Sort-Object LastWriteTime -Descending | Select-Object -First 9)
+if (-not $logs.Count) { Write-Host "找不到可退回的送達紀錄（$logDir）。" -ForegroundColor Yellow; return }
+Write-Host '最近的送件：'
+for ($k = 0; $k -lt $logs.Count; $k++) {
+  $r = @(Import-Csv -LiteralPath $logs[$k].FullName -Encoding UTF8 | Where-Object { $_.'結果' -like '已*' })
+  $g = @($r | Where-Object { $_.'原檔已刪除' -eq 'Y' }).Count
+  Write-Host ('  {0}. {1}　送達 {2} 份（其中 {3} 份已刪除原檔）' -f ($k + 1), $logs[$k].LastWriteTime.ToString('yyyy/MM/dd HH:mm'), $r.Count, $g)
+}
+$sel = Read-Host '要退回哪一次？輸入編號（直接按 Enter＝1，最近一次；輸入 0 取消）'
+if ($sel -eq '0') { Write-Host '已取消，沒有變更任何檔案。'; return }
+if (-not $sel) { $sel = '1' }
+$n = 0; if (-not [int]::TryParse($sel, [ref]$n) -or $n -lt 1 -or $n -gt $logs.Count) { Write-Host '編號不正確，已取消。' -ForegroundColor Yellow; return }
+$log = $logs[$n - 1]
+$rows = @(Import-Csv -LiteralPath $log.FullName -Encoding UTF8 | Where-Object { $_.'結果' -like '已*' })
+$ans = Read-Host "將退回 $($rows.Count) 份（$($log.Name)）。確定嗎？輸入 Y 執行"
+if ($ans -notmatch '^[Yy]') { Write-Host '已取消，沒有變更任何檔案。'; return }
+$out = New-Object System.Collections.Generic.List[object]; $ok = 0; $skip = 0
+foreach ($r in $rows) {
+  $src = $r.'原路徑'; $tgt = $r.'送達路徑'; if (-not $tgt) { $tgt = Join-Path $r.'目的資料夾' $r.'最終檔名' }
+  if (-not (Test-Path -LiteralPath $tgt -PathType Leaf)) { $res = '略過：送達的檔案已不在（可能已被移動或刪除）'; $skip++ }
+  elseif (-not (Test-Path -LiteralPath $src)) {
+    try {
+      $p = Split-Path -Parent $src; if (-not (Test-Path -LiteralPath $p -PathType Container)) { New-Item -ItemType Directory -Force -Path $p -ErrorAction Stop | Out-Null }
+      Move-Item -LiteralPath $tgt -Destination $src -ErrorAction Stop; $res = '已搬回原位置（原檔名）'; $ok++
+    } catch { $res = '失敗：' + $_.Exception.Message; $skip++ }
+  }
+  elseif ((Get-FileHash -LiteralPath $tgt -Algorithm SHA256).Hash -eq (Get-FileHash -LiteralPath $src -Algorithm SHA256).Hash) {
+    try { Remove-Item -LiteralPath $tgt -Force -ErrorAction Stop; $res = '已移除送達的複本（原檔還在）'; $ok++ } catch { $res = '失敗：' + $_.Exception.Message; $skip++ }
+  }
+  else { $res = '略過：送達後檔案已被修改，請自行確認'; $skip++ }
+  $out.Add([pscustomobject]@{ '最終檔名' = $r.'最終檔名'; '送達路徑' = $tgt; '原路徑' = $src; '結果' = $res })
+  Write-Host "$($r.'最終檔名')　$res" -ForegroundColor $(if ($res -like '已*') { 'Gray' } else { 'Yellow' })
+}
+$made = @($rows | ForEach-Object { $_.'新建資料夾' -split ';' } | Where-Object { $_ } | Select-Object -Unique | Sort-Object Length -Descending)
+foreach ($d in $made) {
+  if ((Test-Path -LiteralPath $d -PathType Container) -and -not (Get-ChildItem -LiteralPath $d -Force | Select-Object -First 1)) {
+    try { Remove-Item -LiteralPath $d -Force -ErrorAction Stop; Write-Host "已移除空資料夾：$d" -ForegroundColor Cyan } catch { }
+  }
+}
+$enc = $(if ($PSVersionTable.PSVersion.Major -ge 6) { 'utf8BOM' } else { 'UTF8' })
+$back = Join-Path $logDir ('退回紀錄_' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '.csv')
+$out | Export-Csv -LiteralPath $back -NoTypeInformation -Encoding $enc
+if (-not $skip) { Rename-Item -LiteralPath $log.FullName -NewName ($log.BaseName + '_已退回.csv') }
+Write-Host ''
+Write-Host "完成：已退回 $ok / $($rows.Count) 份" -ForegroundColor Green
+if ($skip) { Write-Host "有 $skip 份未退回（這次送達紀錄保留，可處理後再執行一次），原因請看 $back" -ForegroundColor Yellow } else { Write-Host "退回紀錄：$back" }
+}
+`;
+}
+const delOf = () => { const r = $('modal').querySelector('input[name=mDel]:checked'); return !!r && r.value === 'del'; };
 const modeOf = () => { const r = $('modal').querySelector('input[name=mMode]:checked'); return r ? r.value : 'dest'; };
 function refreshCode(){
   const all = confirmed();
   const list = all.filter(it => it.src.kind === 'handle'), loose = all.length - list.length;
-  const mode = modeOf(); lsSet('存放方式', mode);
+  const mode = modeOf(), del = delOf(); lsSet('存放方式', mode);
+  $('mWarn').textContent = del ? '送達後會核對大小與內容一致才刪除原檔（共用資料夾上的檔案刪除後不進資源回收筒）。送錯可按「退回上次送件」把檔案搬回原位置並改回原檔名。' : '程式只會「複製」，不會移動、修改或刪除原檔；同名檔不覆蓋。送錯可按「退回上次送件」移除送達的複本。';
   let use = list, note = '';
   if(mode === 'dest'){
     const pend = it => !it.dirManual && it.dst && it.dst.path_status === '待確認';
@@ -3113,7 +3359,7 @@ function refreshCode(){
   const dup = use.length - new Set(use.map(it => key(it).toLowerCase())).size;
   $('mSum').textContent = `共 ${use.length} 份。來源：${basePath()}` + (mode === 'dest' ? `；送到 ${new Set(use.map(it => it.row['目的資料夾'].trim())).size} 個目的資料夾。` : '。')
     + (loose ? `（另有 ${loose} 份是拖放或「加入檔案」加入的，不在程式碼內）` : '') + (dup ? `　注意：有 ${dup} 份目的地與檔名相同，重複的會略過。` : '') + note;
-  $('code').value = use.length ? (mode === 'dest' ? buildDestPs(use) : buildPs(use)) : '# 沒有可處理的檔案';
+  $('code').value = use.length ? (mode === 'dest' ? buildDestPs(use, del) : buildPs(use, del)) : '# 沒有可處理的檔案';
   $('mCopy').disabled = !use.length;
 }
 $('copyOut').onclick = () => {
@@ -3124,9 +3370,21 @@ $('copyOut').onclick = () => {
     $('basePath').scrollIntoView({block: 'center'}); $('basePath').focus(); return;
   }
   const m = $('modal').querySelector(`input[name=mMode][value="${lsGet('存放方式', 'dest')}"]`); if(m) m.checked = true;
-  refreshCode(); $('mMsg').textContent = ''; $('modal').hidden = false; $('mCopy').focus();
+  const k = $('modal').querySelector('input[name=mDel][value=keep]'); if(k) k.checked = true;   // 每次預設保留原檔
+  setModal(false); refreshCode(); $('mMsg').textContent = ''; $('modal').hidden = false; $('mCopy').focus();
 };
-$('modal').querySelectorAll('input[name=mMode]').forEach(r => r.addEventListener('change', () => { refreshCode(); $('mMsg').textContent = ''; }));
+$('modal').querySelectorAll('input[name=mMode], input[name=mDel]').forEach(r => r.addEventListener('change', () => { refreshCode(); $('mMsg').textContent = ''; }));
+const M_TITLE = ($('modal').querySelector('h2') || {}).textContent;
+function setModal(back){
+  const h = $('modal').querySelector('h2'); if(h) h.textContent = back ? '退回上次送件的 PowerShell 程式碼' : M_TITLE;
+  $('mModeRow').hidden = back; $('mDelRow').hidden = back;
+}
+if($('rollback')) $('rollback').onclick = () => {
+  setModal(true);
+  $('mSum').textContent = '執行後會列出最近 9 次送件，選一次退回（直接按 Enter＝最近一次）：原檔已刪除的，把送達的檔案搬回原位置並改回原檔名；原檔還在的，核對內容相同後移除送達的複本；送件時新建、變空的資料夾一併移除。執行前會再問一次。';
+  $('mWarn').textContent = '只處理這台電腦「文件\\文字辨識命名工具」裡有送達紀錄的送件；送達後被人改過的檔案不會動。';
+  $('code').value = buildRollbackPs(); $('mCopy').disabled = false; $('mMsg').textContent = ''; $('modal').hidden = false; $('mCopy').focus();
+};
 $('mCopy').onclick = async () => {
   try{ await navigator.clipboard.writeText($('code').value); }catch(e){ $('code').select(); document.execCommand('copy'); }
   $('mMsg').textContent = '已複製，請貼到 PowerShell';
@@ -3169,12 +3427,12 @@ function saveSession(){
   SAVE_T = setTimeout(() => {
     if(!ITEMS.length){ KV.del('session'); return; }
     KV.set('session', {v: 1, savedAt: new Date().toLocaleString('zh-TW', {hour12: false}), base: $('basePath').value, sel: SEL,
-      items: ITEMS.map(it => ({dirManual: !!it.dirManual, rel: it.rel, ext: it.ext, size: it.size, status: it.status === '處理中' ? '待處理' : it.status, raw: it.raw, row: it.row, src: it.src.kind === 'file' ? {kind: 'file', f: it.src.f} : {kind: 'handle', h: it.src.h, root: it.src.root}}))});
+      items: ITEMS.map(it => ({dirManual: !!it.dirManual, keep: !!it.keep, rel: it.rel, ext: it.ext, size: it.size, status: it.status === '處理中' ? '待處理' : it.status, raw: it.raw, row: it.row, src: it.src.kind === 'file' ? {kind: 'file', f: it.src.f} : {kind: 'handle', h: it.src.h, root: it.src.root}}))});
   }, 400);
 }
 async function restoreSession(){
   const s = await KV.get('session'); if(!s || !s.items || !s.items.length) return;
-  ITEMS = s.items.map(o => Object.assign(newItem(o.rel, o.src, o.size), {ext: o.ext, status: o.status, raw: o.raw, row: o.row, dirManual: !!o.dirManual}));
+  ITEMS = s.items.map(o => Object.assign(newItem(o.rel, o.src, o.size), {ext: o.ext, status: o.status, raw: o.raw, row: o.row, keep: !!o.keep, dirManual: !!o.dirManual}));
   SEL = Math.min(ITEMS.length - 1, Math.max(0, s.sel || 0)); $('basePath').value = s.base || '';
   const root = ITEMS.find(i => i.src.root); if(root){ SRC_DIR = root.src.root; $('srcInfo').textContent = `來源：${SRC_DIR.name}`; }
   toastOut(`已接續上次的工作（${s.savedAt} 存檔，${ITEMS.length} 份）。若讀不到檔案，Chrome 會再詢問一次資料夾權限。`);
