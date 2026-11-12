@@ -79,6 +79,13 @@ select,.btn{font:inherit;border:2px solid var(--line);background:var(--card);col
 .chips{display:flex;flex-wrap:wrap;gap:6px;padding:10px 24px 0}
 .chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:4px 12px;font-size:14px;cursor:pointer;color:var(--ink2)}
 .chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.subsbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 24px 0;font-size:13px;color:var(--muted)}
+.subsbar .chip{font-size:13px;padding:3px 10px}
+.subsbar .sc{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:2px 4px 2px 10px;color:var(--ink2);max-width:360px}
+.subsbar .sc span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.subsbar .sc button{border:0;background:none;cursor:pointer;color:var(--muted);font-size:14px;padding:0 4px}
+.star{border:0;background:none;cursor:pointer;font-size:16px;line-height:1;color:var(--muted);padding:0 4px;vertical-align:middle}
+.star.on{color:#E0A100}
 .status{padding:8px 24px;font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 16px}
 .status b{color:var(--ink)}
 .status .src{color:var(--acc2)}
@@ -94,7 +101,7 @@ table{width:100%;border-collapse:collapse}
 td{border-top:1px solid #EFECE4;padding:7px 16px;vertical-align:top}
 td.u{width:130px;color:var(--muted);font-size:13px;white-space:nowrap}
 td.n{width:70px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
-td.a{width:96px;text-align:right}
+td.a{width:128px;text-align:right;white-space:nowrap}
 .ctx{display:block;font-size:12px;color:var(--muted);font-weight:400;word-break:break-all}
 .fold{font-weight:700;color:var(--ink);word-break:break-all}
 a.fold{text-decoration:none}
@@ -239,19 +246,21 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
   <select id="unit" aria-label="單位"><option value="">全部單位</option></select>
   <select id="tender" aria-label="標別" title="依檔名或資料夾名稱中的標別代碼篩選"><option value="">全部標別</option></select>
   <select id="destF" aria-label="歸檔建議" title="依「目的資料夾規則」算出的建議歸檔位置篩選"><option value="">全部歸檔建議</option><option value="move">建議搬移</option><option value="here">已在建議位置</option><option value="manual">需人工判斷</option><option value="skip">不歸檔（公文系統已有）</option></select>
+  <button class="star" id="subTender" hidden title="訂閱這個標別">☆</button>
   <div class="dates" title="依檔案的「最後修改日期」篩選（Windows 檔案總管的「修改日期」），不是建立日期">
     <span class="dl">修改日期</span>
     <input type="date" id="dFrom" aria-label="修改日期起"><span>～</span><input type="date" id="dTo" aria-label="修改日期迄">
     <select id="dQuick" aria-label="快速選擇日期區間"><option value="">快速選擇</option><option value="1">近 1 個月</option><option value="3">近 3 個月</option><option value="6">近半年</option><option value="y">今年</option><option value="x">清除日期</option></select>
   </div>
   <button class="btn primary" id="imp" title="可按住 Ctrl 一次選多個 CSV，也可以分次加入">匯入 CSV</button>
+  <button class="btn primary" id="scanDir" hidden title="不用 CSV：直接讀取資料夾裡的檔案清單（Chrome／Edge）；之後可在「已匯入」旁按 ⟳ 重新讀取">從資料夾讀取…</button>
   <button class="btn" id="reset" hidden>還原內建資料</button>
   <button class="btn" id="recall" hidden>開啟上次匯入</button>
   <button class="btn" id="forget" hidden title="刪除存在這台電腦瀏覽器中的匯入資料">清除記憶</button>
-  <button class="btn" id="aiSum" title="把匯入的清單整理成精簡的資料夾結構摘要（.md），讓 AI 了解整體文件布置；有選單位時只含該單位">給 AI 的資料夾摘要</button>
   <input type="file" id="file" accept=".csv,text/csv" multiple hidden>
 </div>
 <div class="chips" id="chips"></div>
+<div class="subsbar" id="subsBar"></div>
 <div class="status" id="status"></div>
 <div class="srcs" id="srcs" hidden></div>
 <main id="out"></main>
@@ -358,7 +367,7 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
             <div class="odest" id="o_destBox"></div>
             <div class="orow"><button class="btn primary" id="o_confirm">確認並下一筆（Enter）</button><button class="btn" id="o_unconfirm">取消確認</button><button class="btn" id="o_reocr" title="以目前規則與設定重新辨識這一份">重新辨識</button><button class="btn" id="o_useOrig" title="不改名，最終檔名改回原檔名">改用原檔名</button></div>
             <dl class="okv" id="o_kv"></dl>
-            <details><summary class="hint">辨識文字（只顯示在這台電腦）</summary><textarea class="rt oraw" id="o_rawText" readonly></textarea></details>
+            <details><summary class="hint">辨識文字（只顯示在這台電腦）</summary><textarea class="rt oraw" id="o_rawText" readonly></textarea><button class="btn" id="o_copyRaw" type="button" style="margin-top:6px">複製辨識文字</button></details>
           </div>
         </div>
       </div>
@@ -438,7 +447,7 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
   <h2>這個工具做什麼</h2>
   <p>把三件常用的檔案工作放在同一頁：找素材（素材索引）、掃描檔辨識命名（文字辨識命名），以及依同一份「目的資料夾規則」把檔案送到該放的資料夾。全部在這台電腦的瀏覽器處理，不上傳任何地方。</p>
   <dl class="okv" style="font-size:14px">
-    <dt>素材索引</dt><dd>匯入檔案清單 CSV，依分類規則整理成目錄；可搜尋、篩選修改日期、標別與「歸檔建議」，勾選後產生複製程式碼，或「送到建議位置」。</dd>
+    <dt>素材索引</dt><dd>匯入檔案清單 CSV，依分類規則整理成目錄；可搜尋、篩選修改日期、標別與「歸檔建議」，勾選後產生複製程式碼，或「送到建議位置」。常用的資料夾（含子資料夾）、細項或標別可按旁邊的 ☆ 訂閱，再按「★ 只看訂閱」縮小檢索範圍（訂閱記在這台電腦）。</dd>
     <dt>文字辨識命名</dt><dd>選資料夾或拖入掃描 PDF／JPG／PNG，辨識前 3 頁文字，依命名規則建議檔名、依目的資料夾規則算出存放位置；訂正確認後產生送件程式碼。</dd>
     <dt>分類規則</dt><dd>素材索引的大類與細項。</dd>
     <dt>命名規則</dt><dd>文件類別判定與檔名範本（規則.xlsx）；「文件類別」可直接編輯。</dd>
@@ -455,6 +464,7 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
   </ol>
   <p class="hint">沒有權限或路徑過長而無法讀取的資料夾會略過，另存「…_無法讀取清單.txt」。若電腦不允許執行 .bat，可把副檔名改成 .ps1，按右鍵選「用 PowerShell 執行」。</p>
   <p><button class="btn" id="dlScan">下載：檔案清單掃描.bat</button></p>
+  <p><b>不用 CSV 的方式</b>：在「素材索引」按「從資料夾讀取…」，貼上資料夾的完整路徑並選擇同一個資料夾，網頁會直接讀出檔案清單加入索引（網路資料夾約每秒 100 個檔案，和 .bat 差不多）。之後在「已匯入」該清單旁按 ⟳，會重新讀取並先列出新增、刪除的檔案，確認後才更新；也可「另存 CSV」。CSV 匯入的清單同樣可以按 ⟳ 改從資料夾更新。Thumbs.db、Office 暫存檔等隱藏檔讀不到，但這些本來就不列入索引。</p>
 
   <h2>送件：用 PowerShell 把檔案送到目的資料夾</h2>
   <ol>
@@ -502,6 +512,7 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
   </ol>
   <p class="hint">用其他 AI、或沒有安裝技能時：另外附上「給 AI 的說明」（這份是寫給 AI 看的，你不必讀）。清單太大上傳不了時，改附「資料夾摘要」（把整個清單縮成一份資料夾樹）。只需要檔名、路徑和文件首頁文字；機密與個資請先排除，並依機關生成式 AI 使用規範辦理。</p>
   <p><button class="btn" id="aiGuide">下載：給 AI 的說明</button>　<button class="btn" id="aiSum2">下載：資料夾摘要</button></p>
+  <p class="hint">「資料夾摘要」由「素材索引」已匯入的檔案清單產生（素材索引有選單位時只含該單位），把整份清單縮成一份資料夾樹；個人資料夾的內容不列入。</p>
 
   <h2>隱私與使用規範</h2>
   <p>檔案只在這台電腦的瀏覽器中讀取與辨識。素材索引會把個人資料夾名稱遮蔽為○○。匯入的規則（含資料夾路徑）只存在這台電腦的瀏覽器；分享網頁或規則檔前，請確認其中的路徑可以公開。請依機關規定處理機密與個資文件。</p>
@@ -528,6 +539,29 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
   <button class="go" id="mkPlan" title="依目的資料夾規則，產生把選取的檔案複製到建議位置的 PowerShell 程式碼">送到建議位置</button>
   <button class="clear" id="selClear">清除選取</button>
 </div>
+<div class="modal" id="dirAsk" hidden role="dialog" aria-modal="true" aria-labelledby="daTitle">
+  <div class="panel" style="max-width:640px">
+    <h2 id="daTitle">從資料夾讀取檔案清單</h2>
+    <div id="daSetup">
+      <p class="sum" id="daSum"></p>
+      <p class="hint" style="margin:0 0 4px"><b style="color:var(--acc2)">① 資料夾的完整路徑（必填）</b>：在檔案總管打開該資料夾，點網址列複製後貼上；有沒有前後的引號 " 都可以</p>
+      <div class="row" style="display:flex"><input type="text" id="daBase" data-path="1" placeholder="例如 \\伺服器\共用資料夾\本單位 或 D:\資料\掃描暫存"></div>
+      <p class="hint" id="daBaseMsg" style="margin:4px 0 0"></p>
+      <p class="hint" style="margin:10px 0 4px"><b style="color:var(--acc2)">② 選擇同一個資料夾</b>（瀏覽器規定要由你選一次；之後會記住）</p>
+      <div class="acts" style="justify-content:flex-start;margin-top:0"><button class="btn" id="daPick">選擇資料夾…</button><span class="hint" id="daPicked"></span></div>
+      <div class="acts"><button class="btn primary" id="daGo" disabled>開始讀取</button><button class="btn" id="daCancel">取消</button></div>
+      <p class="hint" style="margin-top:10px">只讀取檔名、大小與修改日期，不開啟、不修改任何檔案。網路資料夾大約每秒 100 個檔案（1 萬個約 2 分鐘），讀取期間請勿關閉本頁。</p>
+    </div>
+    <div id="daRun" hidden>
+      <p class="sum" id="daProg"></p>
+      <div class="acts"><button class="btn" id="daStop">停止</button></div>
+    </div>
+    <div id="daDone" hidden>
+      <div id="daDiff"></div>
+      <div class="acts" style="flex-wrap:wrap"><button class="btn primary" id="daApply">更新索引</button><button class="btn" id="daCsv" title="存成與「檔案清單掃描.bat」相同欄位的 CSV">另存 CSV…</button><button class="btn" id="daClose">取消</button></div>
+    </div>
+  </div>
+</div>
 <div class="modal" id="impAsk" hidden role="dialog" aria-modal="true" aria-labelledby="iaTitle">
   <div class="panel" style="max-width:520px">
     <h2 id="iaTitle">要怎麼匯入這些 CSV？</h2>
@@ -547,7 +581,7 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
     <div class="row"><span>存放位置</span>
       <label><input type="checkbox" id="optPick" checked> 執行時跳出視窗，讓我選資料夾</label>
     </div>
-    <div class="row"><span></span><input type="text" id="optDest" placeholder="不跳視窗時使用的路徑；留空＝上次存放的資料夾（第一次為桌面\素材_今天日期）" disabled></div>
+    <div class="row"><span></span><input type="text" id="optDest" data-path="1" placeholder="不跳視窗時使用的路徑；留空＝上次存放的資料夾（第一次為桌面\素材_今天日期）" disabled></div>
     <div class="row"><span>資料夾結構</span>
       <label><input type="radio" name="optKeep" value="unit" checked> 依「單位＼原資料夾名稱」分開放</label>
       <label><input type="radio" name="optKeep" value="flat"> 全部放在同一層</label>
@@ -614,6 +648,7 @@ function load(db){
     cats.map(c => `<button class="chip ${catFilter===c?'on':''}" data-c="${esc(c)}">${esc(c.replace(/^\d+/, ''))}</button>`).join('');
   $('meta').textContent = `資料日期：${DB.stamp}　｜　資料來源：${DB.source}　｜　原檔未搬移；個人資料夾只列件數，不顯示人名；日期為檔案「最後修改日期」`;
   refreshMemoryButtons();
+  renderSubs();
   render();
 }
 
@@ -629,6 +664,31 @@ function dayNum(t){ const m = /(\d{4})\D(\d{1,2})\D(\d{1,2})/.exec(t || ''); ret
 function fmtDay(n){ if(!n) return ''; const y = Math.floor(n / 10000), m = Math.floor(n / 100) % 100, d = n % 100; return `${y}/${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}`; }
 function inputDay(id){ const v = $(id).value; return v ? dayNum(v) : 0; }
 
+// ===== 訂閱：把常用的資料夾（含子資料夾）、細項、標別標記起來，按「只看訂閱」縮小檢索範圍 =====
+const SUBS_KEY = '檔案整理_索引_訂閱';
+let SUBS = {on: false, f: [], c: [], t: []};
+try{ const s = JSON.parse(localStorage.getItem(SUBS_KEY) || 'null'); if(s) SUBS = {on: !!s.on, f: s.f || [], c: s.c || [], t: s.t || []}; }catch(_){}
+function saveSubs(){ try{ localStorage.setItem(SUBS_KEY, JSON.stringify(SUBS)); }catch(_){} }
+const subCount = () => SUBS.f.length + SUBS.c.length + SUBS.t.length;
+const subOnNow = () => SUBS.on && subCount() > 0;
+const catKey = ci => DB.cats[ci][0] + '|' + DB.cats[ci][1];
+const isSubF = p => SUBS.f.some(x => x.toLowerCase() === p.toLowerCase());
+function toggleSub(kind, v){
+  const a = SUBS[kind], i = a.findIndex(x => x.toLowerCase() === String(v).toLowerCase());
+  if(i >= 0) a.splice(i, 1); else a.push(v);
+  saveSubs(); renderSubs(); render();
+  toast(i >= 0 ? '已取消訂閱' : (SUBS.on ? '已訂閱，已加入目前的訂閱範圍' : '已訂閱；按上方「★ 只看訂閱」即可只看訂閱的範圍'));
+}
+function renderSubs(){
+  const n = subCount(), tv = $('tender').value;
+  $('subTender').hidden = !tv; const ton = tv && SUBS.t.includes(tv);
+  $('subTender').textContent = ton ? '★' : '☆'; $('subTender').classList.toggle('on', !!ton); $('subTender').title = ton ? '取消訂閱這個標別' : '訂閱這個標別';
+  if(!n){ $('subsBar').innerHTML = '<span>☆ 在資料夾、細項或標別旁按星號訂閱，之後可「只看訂閱」縮小檢索範圍</span>'; return; }
+  const leaf = p => p.split('\\').filter(Boolean).pop() || p;
+  const chip = (k, v, label, title) => `<span class="sc" title="${esc(title)}"><span>${esc(label)}</span><button data-k="${k}" data-v="${esc(v)}" title="取消訂閱" aria-label="取消訂閱 ${esc(label)}">×</button></span>`;
+  $('subsBar').innerHTML = `<button class="chip ${SUBS.on ? 'on' : ''}" id="subOn" title="只顯示訂閱的資料夾（含子資料夾）、細項與標別">★ 只看訂閱（${n}）</button>` +
+    SUBS.f.map(p => chip('f', p, '📁 ' + leaf(p), p)).join('') + SUBS.c.map(c => chip('c', c, '🏷 ' + c.replace(/^\d+/, '').replace('|', '›'), c)).join('') + SUBS.t.map(x => chip('t', x, '標 ' + x, '標別 ' + x)).join('');
+}
 function render(){
   if(!DB){ $('out').innerHTML = '<div class="empty">尚未匯入資料。<br>請按「匯入 CSV」選擇檔案清單（可一次選多個，例如各共用資料夾的清單），或直接把 CSV 拖進這個網頁。<br>匯入後會記在這台電腦，下次開啟自動載入。</div>'; $('status').innerHTML = ''; return; }
   const terms = $('q').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -638,6 +698,7 @@ function render(){
   const dateOn = !!(dFrom || dTo);
   const destF = $('destF').value;
   const narrowed = terms.length > 0 || dateOn || !!destF;     // 有搜尋、日期或歸檔建議篩選時，逐檔列出符合的檔案
+  const subOn = subOnNow(), subF = SUBS.f.map(x => x.toLowerCase().replace(/\\+$/, '')), subT = new Set(SUBS.t), subC = new Set(SUBS.c), subStamp = {};
   const agg = new Map();  // key ci|fi -> {ci, fi, n, hits:[], folderHit}
   for(const r of DB.files){
     const f = DB.folders[r[0]];
@@ -645,9 +706,15 @@ function render(){
     if(tender && !(r.tc && r.tc.includes(tender))) continue;
     if(dateOn){ if(!r.dn) continue; if(dFrom && r.dn < dFrom) continue; if(dTo && r.dn > dTo) continue; }
     if(destF && destCat(r, f) !== destF) continue;
+    let sOk = true;
+    if(subOn){
+      let fo = subStamp[r[0]]; if(fo === undefined){ const lp = f.p.toLowerCase(); fo = subStamp[r[0]] = subF.some(x => lp === x || lp.startsWith(x + '\\')); }
+      sOk = fo || !!(r.tc && r.tc.some(x => subT.has(x)));
+    }
     for(const ci of r[3]){
       const c = DB.cats[ci];
       if(catFilter && c[0] !== catFilter) continue;
+      if(!sOk && !subC.has(c[0] + '|' + c[1])) continue;
       const key = ci + '|' + r[0];
       let e = agg.get(key); if(!e){ e = {ci, fi:r[0], n:0, hits:[], ids:[], folderHit:null}; agg.set(key, e); }
       e.n++; e.ids.push(r.id);
@@ -680,7 +747,8 @@ function render(){
     for(const ci of [...subs.keys()].sort((a,b)=>DB.cats[a][1].localeCompare(DB.cats[b][1]))){
       const list = subs.get(ci).sort((a,b)=> shownN(b) - shownN(a) || b.n - a.n);
       const subN = list.reduce((s,e)=> s + shownN(e), 0);
-      out.push(`<div class="sub"><h3><span>${esc(DB.cats[ci][1])}</span><span class="cnt">${list.length} 個資料夾・${subN.toLocaleString()} 個檔案</span></h3>`);
+      const cOn = SUBS.c.includes(catKey(ci));
+      out.push(`<div class="sub"><h3><span>${esc(DB.cats[ci][1])}<button class="star${cOn ? ' on' : ''}" data-sc="${esc(catKey(ci))}" title="${cOn ? '取消訂閱這個細項' : '訂閱這個細項'}">${cOn ? '★' : '☆'}</button></span><span class="cnt">${list.length} 個資料夾・${subN.toLocaleString()} 個檔案</span></h3>`);
       const hid = DB.hidden && DB.hidden[ci];
       if(hid && !narrowed && !unit && (hid[0] || hid[1])){
         const bits = []; if(hid[0]) bits.push(`個人資料夾 ${hid[0].toLocaleString()} 個`); if(hid[1]) bits.push(`限閱區 ${hid[1].toLocaleString()} 個`);
@@ -705,7 +773,7 @@ function render(){
             (hs.length > 15 ? `<li><span>…另 ${hs.length - 15} 個</span></li>` : '') + '</ul>';
         }
         const n = narrowed && e.hits.length !== e.n ? `${e.hits.length}/${e.n}` : shownN(e);
-        out.push(`<tr><td class="u">${hl(f.u, terms)}</td><td>${pick}${link}${tag}${ctx}${files}</td><td class="n">${n}</td><td class="a">${f.m ? '' : `<button class="copy" data-p="${esc(f.p)}">複製路徑</button>`}</td></tr>`);
+        out.push(`<tr><td class="u">${hl(f.u, terms)}</td><td>${pick}${link}${tag}${ctx}${files}</td><td class="n">${n}</td><td class="a"><button class="star${isSubF(f.p) ? ' on' : ''}" data-sf="${esc(f.p)}" title="${isSubF(f.p) ? '取消訂閱這個資料夾' : '訂閱這個資料夾（含子資料夾）'}">${isSubF(f.p) ? '★' : '☆'}</button>${f.m ? '' : `<button class="copy" data-p="${esc(f.p)}">複製路徑</button>`}</td></tr>`);
       });
       out.push('</table>');
       if(list.length > CAP) out.push(`<div class="more">另有 ${list.length - CAP} 個資料夾未顯示，請輸入關鍵字或縮短日期區間</div>`);
@@ -713,11 +781,12 @@ function render(){
     }
     out.push('</details>');
   }
-  $('out').innerHTML = out.length ? out.join('') : '<div class="empty">找不到符合的資料，請換個關鍵字或日期區間。</div>';
+  $('out').innerHTML = out.length ? out.join('') : (subOn ? '<div class="empty">目前「只看訂閱」範圍內找不到符合的資料。<br>可按上方「★ 只看訂閱」切回全部，或換個關鍵字、日期區間。</div>' : '<div class="empty">找不到符合的資料，請換個關鍵字或日期區間。</div>');
   syncChecks();
   const src = DB === BUILTIN_DB ? '' : `<span class="src">目前顯示匯入的資料（已記在這台電腦的瀏覽器，下次開啟${BUILTIN_DB ? '可按「開啟上次匯入」' : '會自動載入'}）</span>`;
   const range = dateOn ? `<span>修改日期 <b>${dFrom ? fmtDay(dFrom) : '最早'}</b> ～ <b>${dTo ? fmtDay(dTo) : '今天'}</b></span>` : '';
-  $('status').innerHTML = `<span>${narrowed ? '符合' : '共'} <b>${folderCount.toLocaleString()}</b> 個資料夾項目、<b>${matchFiles.toLocaleString()}</b> 個檔案</span>${range}${src}`;
+  const subNote = subOn ? `<span class="src">★ 只看訂閱（${subCount()} 項）</span>` : '';
+  $('status').innerHTML = subNote + `<span>${narrowed ? '符合' : '共'} <b>${folderCount.toLocaleString()}</b> 個資料夾項目、<b>${matchFiles.toLocaleString()}</b> 個檔案</span>${range}${src}`;
 }
 
 // ===== CSV 匯入 =====
@@ -883,7 +952,7 @@ function renderSources(){
   const box = $('srcs');
   if(!SOURCES.length || !DB || DB === BUILTIN_DB){ box.hidden = true; box.innerHTML = ''; return; }
   box.hidden = false;
-  box.innerHTML = '已匯入：' + SOURCES.map((s, i) => `<span class="src">${esc(s.name)}（${s.raw.rows.length.toLocaleString()} 筆）<button data-i="${i}" title="移除這份清單" aria-label="移除 ${esc(s.name)}">✕</button></span>`).join('');
+  box.innerHTML = '已匯入：' + SOURCES.map((s, i) => `<span class="src">${esc(s.name)}（${s.raw.rows.length.toLocaleString()} 筆）${window.showDirectoryPicker ? `<button data-u="${i}" title="從資料夾重新讀取這份清單（顯示新增、刪除後再更新）" aria-label="更新 ${esc(s.name)}">⟳</button>` : ''}<button data-i="${i}" title="移除這份清單" aria-label="移除 ${esc(s.name)}">✕</button></span>`).join('');
 }
 function applySources(list, msg){
   SOURCES = list;
@@ -935,10 +1004,146 @@ $('iaAdd').addEventListener('click', () => { $('impAsk').hidden = true; if(PENDI
 $('iaReplace').addEventListener('click', () => { $('impAsk').hidden = true; if(PENDING) importFiles(PENDING, 'replace'); PENDING = null; });
 $('iaCancel').addEventListener('click', () => { $('impAsk').hidden = true; PENDING = null; });
 $('srcs').addEventListener('click', e => {
+  const u = e.target.closest('button[data-u]'); if(u){ openDirAsk(+u.dataset.u); return; }
   const b = e.target.closest('button[data-i]'); if(!b) return;
   const s = SOURCES[+b.dataset.i];
   if(!confirm(`從目前的資料移除「${s.name}」？（不會影響原始檔案）`)) return;
   applySources(SOURCES.filter((_, i) => i !== +b.dataset.i), `已移除 ${s.name}`);
+});
+
+// ===== 從資料夾讀取（不用 CSV）：Chrome 的資料夾授權，遞迴讀檔名、大小、修改日期；可記住資料夾，之後按 ⟳ 重新讀取並顯示差異 =====
+const pad2 = n => String(n).padStart(2, '0');
+const fmtDT = ms => { const d = new Date(ms); return `${d.getFullYear()}/${pad2(d.getMonth() + 1)}/${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`; };
+const fmtDur = s => s < 60 ? `${Math.max(1, Math.round(s))} 秒` : s < 3600 ? `${Math.round(s / 60)} 分鐘` : `${(s / 3600).toFixed(1)} 小時`;
+const DirStore = {
+  get(name){ return Memory._tx('readonly', st => st.get('dir:' + name)).catch(() => null); },
+  set(name, v){ return Memory._tx('readwrite', st => st.put(v, 'dir:' + name)).catch(() => null); }
+};
+function rootOfRaw(raw){
+  for(const d of raw.dirs){ if(d.m) continue; if(!d.r) return d.d; if(d.d.toLowerCase().endsWith('\\' + d.r.toLowerCase())) return d.d.slice(0, d.d.length - d.r.length - 1); }
+  return '';
+}
+async function scanFolder(root, prog, stopRef){
+  const files = [], errs = []; let nDirs = 0; const t0 = performance.now();
+  const sem = (n => { let a = 0; const q = []; const rel = () => { a--; if(q.length){ a++; q.shift()(); } }; return fn => new Promise((res, rej) => { const run = () => fn().then(res, rej).finally(rel); if(a < n){ a++; run(); } else q.push(run); }); })(32);
+  const queue = [[root, '']]; let busy = 0;
+  const timer = setInterval(() => prog(files.length, nDirs, (performance.now() - t0) / 1000), 300);
+  const worker = async () => {
+    while(!stopRef.stop){
+      const job = queue.pop();
+      if(!job){ if(!busy) return; await new Promise(r => setTimeout(r, 15)); continue; }
+      busy++; const [dir, rel] = job; nDirs++; const jobs = [];
+      try{
+        for await (const [name, h] of dir.entries()){
+          if(stopRef.stop) break;
+          const r2 = rel ? rel + '\\' + name : name;
+          if(h.kind === 'directory') queue.push([h, r2]);
+          else { const it = {rel: r2, name}; files.push(it); jobs.push(sem(() => h.getFile().then(f => { it.size = f.size; it.mtime = f.lastModified; }, e => { it.err = 1; errs.push(r2); }))); }
+        }
+      }catch(e){ errs.push(rel || root.name); }
+      await Promise.all(jobs); busy--;
+    }
+  };
+  try{ await Promise.all(Array.from({length: 16}, worker)); } finally { clearInterval(timer); }
+  return {files: files.filter(f => !f.err), errs, nDirs, secs: (performance.now() - t0) / 1000};
+}
+// 路徑輸入：接受前後有引號（檔案總管「複製路徑」會加 "）或空白，自動去掉
+const cleanPath = v => String(v || '').trim().replace(/^["'“”「『]+|["'“”」』]+$/g, '').trim().replace(/(?<=.)[\\/]+$/, '');
+document.addEventListener('paste', e => { const el = e.target; if(el && el.matches && el.matches('input[data-path]')) setTimeout(() => { el.value = cleanPath(el.value); el.dispatchEvent(new Event('input', {bubbles: true})); }, 0); });
+document.addEventListener('change', e => { const el = e.target; if(el && el.matches && el.matches('input[data-path]')) el.value = cleanPath(el.value); }, true);
+const PATH_RE = /^(\\\\[^\\]+\\[^\\]+|[A-Za-z]:(\\|$))/;
+function daCheck(){
+  const v = cleanPath($('daBase').value), ok = PATH_RE.test(v);
+  $('daBase').style.borderColor = ok ? '' : 'var(--acc)';
+  $('daBaseMsg').innerHTML = !v ? '<span style="color:var(--acc2)">請先貼上完整路徑，才能開始讀取。</span>' : ok ? '' : '<span style="color:var(--acc2)">路徑格式不對：應以 \\\\伺服器\\… 或 磁碟機代號（如 D:\\）開頭。</span>';
+  $('daGo').disabled = !(ok && DA && DA.handle);
+  $('daGo').title = !ok ? '請先填完整路徑' : !(DA && DA.handle) ? '請先選擇資料夾' : '';
+  return ok;
+}
+$('daBase').addEventListener('input', daCheck);
+let DA = null;   // {idx, name, handle, base, rec, scan, raw}
+async function openDirAsk(idx){
+  const s = idx >= 0 ? SOURCES[idx] : null;
+  const rec = s ? await DirStore.get(s.name) : null;
+  DA = {idx, name: s ? s.name : '', handle: rec && rec.handle || null, rec};
+  $('daTitle').textContent = s ? `更新「${s.name}」` : '從資料夾讀取檔案清單';
+  $('daBase').value = (rec && rec.base) || (s ? rootOfRaw(s.raw) : '');
+  const est = rec && rec.rate ? `上次 ${rec.n.toLocaleString()} 個檔案，預計約 ${fmtDur(rec.n / rec.rate)}。` : (s ? `目前 ${s.raw.rows.length.toLocaleString()} 筆，網路資料夾預計約 ${fmtDur(s.raw.rows.length / 100)}。` : '');
+  $('daSum').textContent = (s ? '重新讀取這份清單對應的資料夾，先列出新增、刪除的檔案，確認後才更新索引。' : '不用先產生 CSV，直接讀取資料夾，加入目前的索引。') + est;
+  $('daPicked').textContent = DA.handle ? `已記住：${DA.handle.name}（可直接開始，或重新選擇）` : '';
+  daCheck();
+  $('daSetup').hidden = false; $('daRun').hidden = $('daDone').hidden = true; $('dirAsk').hidden = false;
+  (DA.handle ? $('daGo') : $('daPick')).focus();
+}
+$('scanDir').hidden = !window.showDirectoryPicker;
+$('scanDir').addEventListener('click', () => openDirAsk(-1));
+$('daCancel').addEventListener('click', () => { $('dirAsk').hidden = true; DA = null; });
+$('daClose').addEventListener('click', () => { $('dirAsk').hidden = true; DA = null; });
+$('daPick').addEventListener('click', async () => {
+  try{ DA.handle = await window.showDirectoryPicker({id: 'docindex', mode: 'read'}); }catch(e){ if(e.name !== 'AbortError') alert('無法開啟這個資料夾：' + e.message); return; }
+  $('daPicked').textContent = `已選：${DA.handle.name}`; if(daCheck()) $('daGo').focus(); else $('daBase').focus();
+});
+$('daGo').addEventListener('click', async () => {
+  const base = cleanPath($('daBase').value); $('daBase').value = base;
+  if(!daCheck()){ $('daBase').focus(); return; }
+  const leaf = base.split('\\').filter(Boolean).pop() || '';
+  if(leaf.toLowerCase() !== DA.handle.name.toLowerCase() && !confirm(`選擇的資料夾是「${DA.handle.name}」，但完整路徑最後一層是「${leaf}」。兩者應是同一個資料夾，否則路徑會錯。仍要繼續嗎？`)) return;
+  try{ if((await DA.handle.queryPermission({mode: 'read'})) !== 'granted' && (await DA.handle.requestPermission({mode: 'read'})) !== 'granted'){ alert('沒有取得讀取權限。'); return; } }
+  catch(e){ alert('無法開啟上次的資料夾，請按「選擇資料夾…」重新選擇。'); DA.handle = null; $('daGo').disabled = true; return; }
+  DA.base = base; DA.stop = {stop: false};
+  $('daSetup').hidden = true; $('daRun').hidden = false; $('daStop').disabled = false; $('daStop').focus();
+  const est = DA.rec && DA.rec.rate ? DA.rec.n : (DA.idx >= 0 ? SOURCES[DA.idx].raw.rows.length : 0);
+  const scan = await scanFolder(DA.handle, (n, d, s) => {
+    const rate = n / Math.max(s, 0.1);
+    $('daProg').innerHTML = `讀取中：<b>${n.toLocaleString()}</b> 個檔案、${d.toLocaleString()} 個資料夾，${fmtDur(s)}` + (est && rate > 1 && n < est ? `，預計還要約 ${fmtDur((est - n) / rate)}` : '');
+  }, DA.stop);
+  if(DA.stop.stop){ $('dirAsk').hidden = true; toast('已停止，索引沒有變更'); DA = null; return; }
+  DA.scan = scan;
+  const rows = [['FileName', 'FullPath', 'RelativePath', 'Directory', 'LastWriteTime', 'SizeBytes']];
+  for(const f of scan.files){ const full = base + '\\' + f.rel; rows.push([f.name, full, f.rel, full.slice(0, full.length - f.name.length - 1), fmtDT(f.mtime), String(f.size)]); }
+  const name = DA.name || `${leaf}（資料夾）`;
+  try{ DA.raw = parseToRaw([{name, rows}], RULES); }catch(e){ alert(e.message); $('dirAsk').hidden = true; return; }
+  DA.name = name;
+  // 差異（依遮蔽後的路徑＋修改日期；Thumbs.db、Office 暫存檔等不列入，與索引相同）
+  const C = compileRules(RULES);
+  const keep = n => !n.startsWith('~') && !/^(thumbs\.db|desktop\.ini)$/i.test(n) && !C.junk.has((n.lastIndexOf('.') >= 0 ? n.slice(n.lastIndexOf('.')) : '').toLowerCase());
+  const day = s => { const m = String(s || '').match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/); return m ? `${m[1]}/${pad2(m[2])}/${pad2(m[3])}` : ''; };
+  const toMap = raw => { const m = new Map(); for(const [di, n, d] of raw.rows){ if(!keep(n)) continue; const dd = raw.dirs[di]; m.set((dd.d + '\\' + n).toLowerCase(), {p: (dd.r ? dd.r + '\\' : '') + n, d: day(d)}); } return m; };
+  const nw = toMap(DA.raw), old = DA.idx >= 0 ? toMap(SOURCES[DA.idx].raw) : new Map();
+  const add = [], del = [], mod = [];
+  for(const [k, v] of nw){ const o = old.get(k); if(!o) add.push(v.p); else if(o.d && v.d && o.d !== v.d) mod.push(v.p); }
+  for(const [k, v] of old) if(!nw.has(k)) del.push(v.p);
+  const list = (t, a) => a.length ? `<details><summary>${t} ${a.length.toLocaleString()} 個${a.length > 100 ? '（列前 100 個）' : ''}</summary><ul style="font-size:13px;max-height:200px;overflow:auto;margin:4px 0">${a.slice(0, 100).map(x => `<li>${esc(x)}</li>`).join('')}</ul></details>` : '';
+  const rate = scan.files.length / Math.max(scan.secs, 0.1);
+  $('daDiff').innerHTML = `<p class="sum">讀到 <b>${scan.files.length.toLocaleString()}</b> 個檔案、${scan.nDirs.toLocaleString()} 個資料夾，花了 ${fmtDur(scan.secs)}${scan.errs.length ? `；<span style="color:var(--acc2)">${scan.errs.length.toLocaleString()} 處沒有權限或無法讀取，已略過</span>` : ''}。</p>` +
+    (DA.idx >= 0 ? `<p>和目前的「${esc(DA.name)}」比較（不含 Thumbs.db、暫存檔）：<b>新增 ${add.length.toLocaleString()}</b>、<b>刪除 ${del.length.toLocaleString()}</b>、<b>修改日期不同 ${mod.length.toLocaleString()}</b>${!add.length && !del.length && !mod.length ? '，沒有變動' : ''}。</p>${list('新增', add)}${list('刪除', del)}${list('修改日期不同', mod)}` : `<p>按「更新索引」加入目前的索引（已匯入的其他清單保留）。</p>`);
+  $('daApply').textContent = DA.idx >= 0 ? '更新索引' : '加入索引';
+  DirStore.set(DA.name, {handle: DA.handle, base, n: scan.files.length, rate, at: Date.now()});
+  $('daRun').hidden = true; $('daDone').hidden = false; $('daApply').focus();
+});
+$('daStop').addEventListener('click', () => { if(DA && DA.stop){ DA.stop.stop = true; $('daStop').disabled = true; } });
+$('daApply').addEventListener('click', () => {
+  if(!DA || !DA.raw) return; const d = DA; $('dirAsk').hidden = true; DA = null;
+  const next = d.idx >= 0 ? SOURCES.map((s, i) => i === d.idx ? {name: s.name, raw: d.raw} : s) : SOURCES.filter(s => s.name !== d.name).concat({name: d.name, raw: d.raw});
+  applySources(next, d.idx >= 0 ? `已更新 ${d.name}` : `已加入 ${d.name}`);
+});
+$('daCsv').addEventListener('click', async () => {
+  if(!DA || !DA.scan) return;
+  const cols = ['FileName', 'BaseName', 'Extension', 'FullPath', 'Directory', 'RelativePath', 'SizeBytes', 'SizeKB', 'SizeMB', 'CreationTime', 'LastWriteTime', 'LastAccessTime', 'Attributes', 'IsReadOnly', 'ScanTime'];
+  const q = v => { v = v == null ? '' : String(v); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const now = fmtDT(Date.now()), lines = [cols.join(',')];
+  for(const f of DA.scan.files.slice().sort((a, b) => a.rel.localeCompare(b.rel))){
+    const dot = f.name.lastIndexOf('.'), full = DA.base + '\\' + f.rel;
+    lines.push([f.name, dot > 0 ? f.name.slice(0, dot) : f.name, dot > 0 ? f.name.slice(dot).toLowerCase() : '', full, full.slice(0, full.length - f.name.length - 1), f.rel, f.size, (f.size / 1024).toFixed(2), (f.size / 1048576).toFixed(2), '', fmtDT(f.mtime), '', '', '', now].map(q).join(','));
+  }
+  const blob = new Blob(['\ufeff' + lines.join('\r\n') + '\r\n'], {type: 'text/csv'});
+  const leaf = (DA.base.split('\\').filter(Boolean).pop() || 'folder').replace(/[\\/:*?"<>|]/g, '_');
+  const fname = `${leaf}(全)_${now.slice(0, 10).replace(/\//g, '')}.csv`;
+  if(window.showSaveFilePicker){
+    try{ const h = await window.showSaveFilePicker({suggestedName: fname, id: 'docindexcsv', types: [{description: 'CSV 檔', accept: {'text/csv': ['.csv']}}]}); const w = await h.createWritable(); await w.write(blob); await w.close(); toast(`已儲存 ${h.name}`); return; }
+    catch(e){ if(e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 });
 
 // ===== 匯入記憶（存在這台電腦的瀏覽器 IndexedDB，只存遮蔽人名後的清單） =====
@@ -1259,7 +1464,14 @@ $('forget').addEventListener('click', () => {
     refreshMemoryButtons(); toast('已清除記憶');
   });
 });
+$('subsBar').addEventListener('click', e => {
+  if(e.target.closest('#subOn')){ SUBS.on = !SUBS.on; saveSubs(); renderSubs(); render(); return; }
+  const b = e.target.closest('button[data-k]'); if(b) toggleSub(b.dataset.k, b.dataset.v);
+});
+$('subTender').addEventListener('click', () => { const v = $('tender').value; if(v) toggleSub('t', v); });
+$('tender').addEventListener('change', renderSubs);
 $('out').addEventListener('click', e => {
+  const s = e.target.closest('.star'); if(s){ e.preventDefault(); e.stopPropagation(); if(s.dataset.sf) toggleSub('f', s.dataset.sf); else if(s.dataset.sc) toggleSub('c', s.dataset.sc); return; }
   const b = e.target.closest('.copy'); if(!b) return;
   const p = b.dataset.p;
   (navigator.clipboard ? navigator.clipboard.writeText(p) : Promise.reject()).then(() => toast('已複製路徑，可貼到檔案總管網址列'), () => {
@@ -1301,7 +1513,7 @@ function buildCode(){
   let nFiles = 0; const lines = [];
   for(const [dir, g] of groups){ lines.push('U|' + g.u, 'D|' + dir); g.names.forEach(n => { lines.push('F|' + n); nFiles++; }); }
   $('mSum').textContent = `已選 ${nFiles.toLocaleString()} 個檔案，分布在 ${groups.size.toLocaleString()} 個資料夾。`;
-  const pick = $('optPick').checked, destIn = $('optDest').value.trim();
+  const pick = $('optPick').checked, destIn = cleanPath($('optDest').value);
   const keep = document.querySelector('input[name=optKeep]:checked').value;
   const today = new Date(); const ymd = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
   const destExpr = destIn ? psQuote(destIn) : `$(if ($last) { $last } else { Join-Path ([Environment]::GetFolderPath('Desktop')) '素材_${ymd}' })`;
@@ -1382,7 +1594,7 @@ function refreshCode(){ $('code').value = buildCode(); }
 $('mkCode').addEventListener('click', () => { refreshCode(); $('modal').hidden = false; $('mCopy').focus(); });
 $('mClose').addEventListener('click', () => { $('modal').hidden = true; });
 $('modal').addEventListener('click', e => { if(e.target === $('modal')) $('modal').hidden = true; });
-document.addEventListener('keydown', e => { if(e.key === 'Escape' && !$('modal').hidden) $('modal').hidden = true; });
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !$('modal').hidden) $('modal').hidden = true; if(e.key === 'Escape' && !$('dirAsk').hidden && $('daRun').hidden){ $('dirAsk').hidden = true; DA = null; } });
 const COPY_KEY = '檔案整理_索引_複製設定';
 function saveCopyOpts(){ try{ localStorage.setItem(COPY_KEY, JSON.stringify({pick: $('optPick').checked, dest: $('optDest').value, keep: document.querySelector('input[name=optKeep]:checked').value})); }catch(_){} }
 (function restoreCopyOpts(){
@@ -2479,7 +2691,6 @@ async function downloadLayoutSummary(){
   const name = await saveBlob(`資料夾結構摘要_${r.unit ? r.unit + '_' : ''}${nowStamp()}.md`, new Blob(['\ufeff' + r.md + '\n'], {type: 'text/markdown'}), '.md');
   if(name) toast(`已儲存 ${name}（${r.files.toLocaleString()} 個檔案整理成 ${r.lines.toLocaleString()} 行資料夾樹）`);
 }
-$('aiSum').addEventListener('click', downloadLayoutSummary);
 $('aiSum2').addEventListener('click', downloadLayoutSummary);
 $('aiGuide').addEventListener('click', downloadAiGuide);
 
@@ -2895,7 +3106,10 @@ const drop = $('drop');
 ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
 ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
 drop.addEventListener('drop', e => addFiles([...e.dataTransfer.files]));
-$('basePath').onchange = () => { const v = $('basePath').value.trim().replace(/[\\/]+$/, ''); $('basePath').value = v; if(SRC_DIR){ const m = lsGet('完整路徑', {}); m[SRC_DIR.name] = v; lsSet('完整路徑', m); } saveSession(); };
+// 路徑輸入：接受前後有引號（檔案總管「複製路徑」會加 "）或空白，自動去掉
+const cleanPath = v => String(v || '').trim().replace(/^["'“”「『]+|["'“”」』]+$/g, '').trim().replace(/(?<=.)[\\/]+$/, '');
+['basePath', 'fDir'].forEach(id => $(id).addEventListener('paste', () => setTimeout(() => { $(id).value = cleanPath($(id).value); if(id === 'fDir') commitEdits(); else $('basePath').onchange(); }, 0)));
+$('basePath').onchange = () => { const v = cleanPath($('basePath').value); $('basePath').value = v; if(SRC_DIR){ const m = lsGet('完整路徑', {}); m[SRC_DIR.name] = v; lsSet('完整路徑', m); } saveSession(); };
 $('clearAll').onclick = () => {
   if(ITEMS.length && !confirm('清空目前的清單與辨識結果？（不會動到任何檔案）')) return;
   ITEMS = []; SEL = -1; renderList(); renderDetail(); updateProg(); KV.del('session');
@@ -2912,6 +3126,10 @@ function updateProg(){
   if(!RUNNING) $('prog').textContent = ITEMS.length ? `共 ${ITEMS.length} 份，已完成 ${done} 份` + (todo ? `，待處理 ${todo} 份` : '') : '尚未加入檔案';
   const conf = ITEMS.filter(i => i.row['確認'] === 'Y').length;
   $('outInfo').textContent = `已確認 ${conf} 份`;
+}
+// 辨識文字整理：中文字之間的多餘空格全部去除，只保留英文單字之間的空格；保留換行
+function tidyOcr(s){
+  return String(s || '').replace(/\r/g, '').split('\n').map(l => l.replace(/[ \t\u3000\u00a0]+/g, (m, o, str) => /[A-Za-z]/.test(str[o - 1] || '') && /[A-Za-z]/.test(str[o + m.length] || '') ? ' ' : '')).join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 async function processItem(it){
   const t0 = performance.now(); const row = it.row; it.keep = false;
@@ -2930,7 +3148,7 @@ async function processItem(it){
       raw = raw + '\n' + r2.raw; pages = r2.pages; src = r2.src + '(重試)';
       a = Engine.analyze(raw, RULES, it.ext);
     }
-    it.raw = raw;
+    it.raw = tidyOcr(raw);
     row['OCR頁數'] = pages; row['文字來源'] = src; row['關鍵字校正'] = a.fixes.join('；');
     Engine.fillRow(row, a, RULES, SET.roots);
     it.status = row['狀態'];
@@ -2965,6 +3183,7 @@ async function runAll(list){
   RUNNING = false; $('stop').hidden = true; updateProg(); renderList(); saveSession();
   if(SEL >= 0) renderDetail();
 }
+$('copyRaw').onclick = async () => { const v = $('rawText').value; if(!v) return; try{ await navigator.clipboard.writeText(v); }catch(_){ $('rawText').select(); document.execCommand('copy'); } $('copyRaw').textContent = '已複製 ✓'; setTimeout(() => $('copyRaw').textContent = '複製辨識文字', 1500); };
 $('run').onclick = () => runAll(ITEMS.filter(i => i.status === '待處理'));
 // 保留原檔名：不辨識，最終檔名＝原檔名，目的資料夾依原檔名判定（只送件、不改名）
 const baseName = it => it.rel.split(/[\\/]/).pop();
@@ -3081,7 +3300,7 @@ function renderDetail(){
   noteName();
   const kv = [['原始檔案', it.rel], ['狀態', it.status + (r['確認'] === 'Y' ? '（已確認）' : '')], ['文件類別', r['文件類別']], ['建議檔名', r['建議檔名']], ['缺少欄位', r['缺少欄位']], ['擷取欄位', r['擷取欄位']], ['關鍵字校正', r['關鍵字校正']], ['文字來源', r['文字來源'] && (r['OCR頁數'] ? `${r['文字來源']}，${r['OCR頁數']} 頁，${r['OCR秒數']} 秒` : r['文字來源'])]];
   $('kv').innerHTML = kv.filter(([, v]) => v !== '' && v != null).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
-  $('rawText').value = it.raw || '';
+  $('rawText').value = tidyOcr(it.raw || '');
   renderDestBox(it);
   $('unconfirm').hidden = r['確認'] !== 'Y';
   const busy = ['待處理', '處理中'].includes(it.status);
@@ -3112,7 +3331,8 @@ async function showPreview(it){
 }
 function commitEdits(){
   const it = ITEMS[SEL]; if(!it) return;
-  const n = $('fName').value.trim(), d = $('fDir').value.trim();
+  const n = $('fName').value.trim(), d = cleanPath($('fDir').value);
+  if($('fDir').value !== d) $('fDir').value = d;
   if($('fName').dataset.id !== String(it.id)) return;
   $('fName').dataset.v = $('fName').value; $('fDir').dataset.v = $('fDir').value;
   if(n !== it.row['最終檔名'] || d !== it.row['目的資料夾']){ if(d !== it.row['目的資料夾']){ it.dirManual = true; it.row['目的資料夾'] = d; } if(n !== it.row['最終檔名']){ it.row['最終檔名'] = n; applyDest(it); if(!it.dirManual){ $('fDir').value = it.row['目的資料夾']; $('fDir').dataset.v = it.row['目的資料夾']; } renderDestBox(it); } if(it.row['確認'] === 'Y' && !validName(n).ok) it.row['確認'] = ''; renderItem(it); saveSession(); }
@@ -3134,7 +3354,7 @@ $('openOrig').onclick = async () => { const it = ITEMS[SEL]; if(!it) return; try
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && !$('modal').hidden){ $('modal').hidden = true; return; }
   if($('tab-work').hidden || !$('modal').hidden) return;
-  if(e.target.closest && e.target.closest('#o_rawText')) return;
+  if(e.target.closest && e.target.closest('#o_rawText, #o_copyRaw')) return;
   if(e.key === 'PageDown'){ e.preventDefault(); step(1); }
   else if(e.key === 'PageUp'){ e.preventDefault(); step(-1); }
   else if(e.key === 'Enter' && (e.target === $('fName') || e.target === $('fDir'))){ e.preventDefault(); confirmNext(); }
@@ -3159,7 +3379,7 @@ async function saveBytes(name, data, type, ext){
 }
 const confirmed = () => { commitEdits(); return ITEMS.filter(i => i.row['確認'] === 'Y'); };
 const finalName = it => { let n = it.row['最終檔名'].trim().replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').replace(/^[ .]+|[ .]+$/g, ''); if(!extOf(n)) n += it.ext; return n; };
-const basePath = () => $('basePath').value.trim().replace(/[\\/]+$/, '');
+const basePath = () => cleanPath($('basePath').value);
 const fullPath = it => it.src.kind === 'handle' && basePath() ? basePath() + '\\' + it.rel : '';
 const psQ = s => "'" + String(s).replace(/'/g, "''") + "'";
 // 送件共用：記錄要新建的資料夾（退回時移除）、核對後刪除原檔、送達紀錄
