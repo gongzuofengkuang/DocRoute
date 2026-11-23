@@ -16,11 +16,11 @@ param(
 #  檔案清單掃描（File Inventory）
 #  掃描指定資料夾內所有檔案，輸出檔案清單 CSV。
 #  只讀取檔案資訊（名稱、路徑、大小、日期），不開啟、不修改任何檔案。
-#  輸出欄位與原 01-ScanFiles.ps1 完全相同，可直接供「嘉義計畫說明素材_自動彙整.ps1」使用。
+#  輸出的 CSV 可直接匯入「檔案整理工具（DocRoute）」的素材索引。
 #
 #  用法一：點兩下「檔案清單掃描.bat」，依畫面提示操作。
 #  用法二（排程或批次）：
-#    powershell -ExecutionPolicy Bypass -File ScanFiles.ps1 -TargetPath "\\10.29.19.105\檔案交換中心" -OutputCsv "D:\清單\檔案交換中心(全).csv"
+#    powershell -ExecutionPolicy Bypass -File 檔案清單掃描.ps1 -TargetPath "\\伺服器\共用資料夾" -OutputCsv "D:\清單\共用資料夾(全).csv"
 # ============================================================
 
 $ErrorActionPreference = 'Stop'
@@ -35,7 +35,7 @@ function Write-Title([string]$t) {
 }
 
 function Select-Folder {
-    $typed = Read-Host '請輸入要掃描的資料夾路徑（可貼上 \\10.29.19.105\檔案交換中心 這類網路路徑；直接按 Enter 則開啟選擇視窗）'
+    $typed = Read-Host '請輸入要掃描的資料夾路徑（可貼上 \\伺服器\共用資料夾 這類網路路徑；直接按 Enter 則開啟選擇視窗）'
     $typed = $typed.Trim().Trim('"')
     if ($typed) { return $typed }
     try {
