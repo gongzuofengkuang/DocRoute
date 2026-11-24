@@ -13,6 +13,15 @@ header{background:var(--ink);color:#F5F3EE;padding:18px 24px 0}
 .tabs button{font:inherit;font-size:15px;border:0;border-radius:8px 8px 0 0;padding:8px 18px;background:rgba(255,255,255,.12);color:#DCE3EB;cursor:pointer}
 .tabs button.on{background:var(--bg2);color:var(--ink);font-weight:700}
 .rules{padding:0 24px 64px}
+.hub{padding-bottom:8px}.hubgrid{display:grid;grid-template-columns:1fr 2fr;gap:16px;margin:12px 0 4px}
+.hubgrp{background:#fff;border:1px solid var(--line,#ddd);border-radius:12px;padding:10px 14px 14px}
+.hubgrp h3{margin:2px 0 10px;font-size:15px}.hubgrp h3 small{font-weight:normal;color:#777;margin-left:8px;font-size:12px}
+.hubgrp{display:flex;flex-direction:column}.hubgrp:last-child{display:grid;grid-template-columns:1fr 1fr;column-gap:12px;align-content:start}.hubgrp:last-child h3{grid-column:1/-1}
+.hubcard{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;width:100%;padding:12px 14px;border:2px solid #e3dccf;border-radius:10px;background:#FBF8F2;cursor:pointer;font:inherit;color:inherit}
+.hubcard:hover{border-color:var(--acc)}.hubcard.on{border-color:var(--acc);background:#FFF4E5;box-shadow:0 0 0 3px rgba(224,122,41,.15)}
+.hubcard b{font-size:16px}.hubcard b::after{content:' ▸';color:var(--acc)}.hubcard.on b::after{content:' ▾'}
+.hubcard span{font-size:13px;color:#555}.hubcard small{font-size:12px;color:#888}
+@media (max-width:800px){.hubgrid,.hubgrp:last-child{grid-template-columns:1fr}}
 .rules>*:not(.rbar){max-width:1240px}
 .rbar{position:sticky;top:0;z-index:5;background:var(--bg2);margin:0 -24px;padding:12px 24px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;border-bottom:1px solid var(--line)}
 .rbar .sp{flex:1}
@@ -161,7 +170,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
 .toast.show{opacity:1}
 .drop{outline:3px dashed var(--acc);outline-offset:-8px}
 @media (max-width:700px){td.u{display:none}.dates{width:100%}.dates input{flex:1;min-width:0}.bar{padding:10px 12px}main,.chips,.status{padding-left:12px;padding-right:12px}}
-/* ===== 文字辨識命名、目的資料夾規則、說明（沿用素材索引配色） ===== */
+/* ===== 文字辨識命名、歸檔規則、說明（沿用素材索引配色） ===== */
 .ocr{padding:16px 24px 64px}
 .ocard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:0 0 14px}
 .ocard h2{font-size:17px;margin:0 0 8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -267,7 +276,7 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
 <header>
   <h1 id="pageTitle">檔案整理工具</h1>
   <div class="meta" id="meta"></div>
-  <nav class="tabs" role="tablist"><button data-tab="index" class="on">素材索引</button><button data-tab="ocr">文字辨識命名</button><button data-tab="rules">分類規則</button><button data-tab="naming">命名規則</button><button data-tab="dest">目的資料夾規則</button><button data-tab="lab">規則實驗室</button><button data-tab="help">說明</button></nav>
+  <nav class="tabs" role="tablist"><button data-tab="index" class="on">素材索引</button><button data-tab="ocr">文字辨識命名</button><button data-tab="hub">規則</button><button data-tab="lab">規則實驗室</button><button data-tab="help">說明</button></nav>
 </header>
 <div id="tabIndex">
 <div class="bar">
@@ -281,7 +290,7 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
   </div>
   <select id="unit" aria-label="單位"><option value="">全部單位</option></select>
   <select id="tender" aria-label="標別" title="依檔名或資料夾名稱中的標別代碼篩選"><option value="">全部標別</option></select>
-  <select id="destF" aria-label="歸檔建議" title="依「目的資料夾規則」算出的建議歸檔位置篩選"><option value="">全部歸檔建議</option><option value="move">建議搬移</option><option value="here">已在建議位置</option><option value="manual">需人工判斷</option><option value="skip">不歸檔（公文系統已有）</option></select>
+  <select id="destF" aria-label="歸檔建議" title="依「歸檔規則」算出的建議歸檔位置篩選"><option value="">全部歸檔建議</option><option value="move">建議搬移</option><option value="here">已在建議位置</option><option value="manual">需人工判斷</option><option value="skip">不歸檔（公文系統已有）</option></select>
   <button class="star" id="subTender" hidden title="訂閱這個標別">☆</button>
   <div class="dates" title="依檔案的「最後修改日期」篩選（Windows 檔案總管的「修改日期」），不是建立日期">
     <span class="dl">修改日期</span>
@@ -301,14 +310,28 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
 <div class="srcs" id="srcs" hidden></div>
 <main id="out"></main>
 </div>
+<section id="tabHub" class="rules hub" hidden>
+  <h2>規則</h2>
+  <p class="hint">點選要查看或修改的規則（再點一次收起）。修改後存在這台電腦的瀏覽器；按各規則上方的「下載」可存成 Excel，分享給同仁或備份。</p>
+  <div class="hubgrid">
+    <div class="hubgrp"><h3>資料夾<small>素材索引用</small></h3>
+      <button class="hubcard" data-rsub="rules" aria-expanded="false"><b>分類規則</b><span>哪些檔案和本計畫有關、要歸到哪個大類與細項</span><small id="hubS_rules"></small></button>
+    </div>
+    <div class="hubgrp"><h3>命名系統<small>文字辨識命名用</small></h3>
+      <button class="hubcard" data-rsub="naming" aria-expanded="false"><b>檔名規則</b><span>從辨識文字判定文件類別，產生建議檔名（含辨識設定）</span><small id="hubS_naming"></small></button>
+      <button class="hubcard" data-rsub="dest" aria-expanded="false"><b>歸檔規則</b><span>依檔名決定檔案要放到哪個資料夾</span><small id="hubS_dest"></small></button>
+    </div>
+  </div>
+</section>
 <section id="tabRules" class="rules" hidden>
   <div class="rbar">
     <span id="rState"></span><span class="sp"></span>
     <button class="btn primary" id="rApply" disabled>套用並重新分類</button>
     <button class="btn" id="rReset">還原預設</button>
-    <button class="btn" id="rExport" title="存成 .json 檔，可分享給同仁，或交給每月執行的程式使用">匯出規則檔</button>
-    <button class="btn" id="rImport">匯入規則檔</button>
-    <input type="file" id="rFile" accept=".json,application/json" hidden>
+    <button class="btn" id="rImport">匯入規則（.xlsx 或 .json）</button>
+    <button class="btn" id="rExport" title="存成 Excel，可分享給同仁或備份">下載目前規則（.xlsx）</button>
+    <button class="btn" id="rExportJson" title="存成 .json（舊格式）">另存 .json</button>
+    <input type="file" id="rFile" accept=".xlsx,.json,application/json" hidden>
   </div>
   <div class="rnote" id="rNote" hidden></div>
   <h2>1　計畫判定：哪些檔案和本計畫有關</h2>
@@ -399,7 +422,7 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
           </div>
           <div>
             <div class="ofld"><label for="o_fName">最終檔名</label><input type="text" class="otext" id="o_fName"><div class="owarn" id="o_fNote"></div></div>
-            <div class="ofld"><label for="o_fDir">目的資料夾<small id="o_fDirNote">依「目的資料夾規則」自動算出；改檔名會重算，手動修改後不再自動更新</small></label><input type="text" class="otext" id="o_fDir"></div>
+            <div class="ofld"><label for="o_fDir">目的資料夾<small id="o_fDirNote">依「歸檔規則」自動算出；改檔名會重算，手動修改後不再自動更新</small></label><input type="text" class="otext" id="o_fDir"></div>
             <div class="odest" id="o_destBox"></div>
             <div class="orow"><button class="btn primary" id="o_confirm">確認並下一筆（Enter）</button><button class="btn" id="o_unconfirm">取消確認</button><button class="btn" id="o_reocr" title="以目前規則與設定重新辨識這一份">重新辨識</button><button class="btn" id="o_useOrig" title="不改名，最終檔名改回原檔名">改用原檔名</button></div>
             <dl class="okv" id="o_kv"></dl>
@@ -426,12 +449,12 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
 <section id="o_tab-rules" class="rules" hidden>
   <div class="rbar">
     <span id="o_ruleSrc"></span><span class="sp"></span>
-    <button class="btn primary" id="o_impRules">匯入規則.xlsx</button><input type="file" id="o_ruleIn" accept=".xlsx" hidden>
+    <button class="btn primary" id="o_impRules">匯入規則（.xlsx）</button><input type="file" id="o_ruleIn" accept=".xlsx" hidden>
     <button class="btn" id="o_resetRules">還原內建規則</button>
-    <button class="btn" id="o_dlRules">下載目前規則.xlsx</button>
-    <button class="btn" id="o_reapply" title="不必重新辨識，用已辨識的文字套用目前的命名規則">套用到已辨識的檔案</button>
+    <button class="btn" id="o_dlRules">下載目前規則（.xlsx）</button>
+    <button class="btn" id="o_reapply" title="不必重新辨識，用已辨識的文字套用目前的檔名規則">套用到已辨識的檔案</button>
   </div>
-  <p class="hint" style="margin-top:14px">命名規則決定「文字辨識命名」分頁的文件類別與建議檔名，規則檔為 規則.xlsx：「文件類別」可直接在下表編輯（新增、刪除、排序、改命名範本），其他工作表請下載後用 Excel 修改再匯入；修改與匯入都會記在這台電腦。改完可按「套用到已辨識的檔案」，不必重新辨識。檔案要放到哪裡由「目的資料夾規則」分頁決定。</p>
+  <p class="hint" style="margin-top:14px">檔名規則決定「文字辨識命名」分頁的文件類別與建議檔名，規則檔為 規則.xlsx：「文件類別」可直接在下表編輯（新增、刪除、排序、改命名範本），其他工作表請下載後用 Excel 修改再匯入；修改與匯入都會記在這台電腦。改完可按「套用到已辨識的檔案」，不必重新辨識。檔案要放到哪裡由「規則」分頁的「歸檔規則」決定。</p>
   <div class="olog" id="o_ruleErr"></div>
   <div id="o_ruleView"></div>
   <h2>辨識設定</h2>
@@ -465,11 +488,11 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
   <div class="rbar">
     <span id="dSrc"></span><span class="sp"></span>
     <label class="ochk">根目錄 <select id="dRoot"><option value="正式值">正式值（共用區）</option><option value="試行值">試行值（本機測試）</option></select></label>
-    <button class="btn primary" id="dImp">匯入規則.xlsx</button><input type="file" id="dFile" accept=".xlsx" hidden>
+    <button class="btn primary" id="dImp">匯入規則（.xlsx）</button><input type="file" id="dFile" accept=".xlsx" hidden>
     <button class="btn" id="dReset">還原內建規則</button>
-    <button class="btn" id="dDl">下載目前規則.xlsx</button>
+    <button class="btn" id="dDl">下載目前規則（.xlsx）</button>
   </div>
-  <p class="hint" style="margin-top:14px">目的資料夾規則決定檔案要歸到哪個資料夾，「素材索引」的歸檔建議與「文字辨識命名」的目的資料夾共用這一份；規則檔為 自動歸檔規則.xlsx，用 Excel 修改後在這裡匯入。判定方式：先認案別（標案代碼、契約別名），再認事件（停復工、工期展延、契約變更、估驗計價…）與次別，最後依「分送規則」由上而下取第一條符合者。<span id="dVer"></span></p>
+  <p class="hint" style="margin-top:14px">歸檔規則決定檔案要歸到哪個資料夾，「素材索引」的歸檔建議與「文字辨識命名」的目的資料夾共用這一份；規則檔為 自動歸檔規則.xlsx，用 Excel 修改後在這裡匯入。判定方式：先認案別（標案代碼、契約別名），再認事件（停復工、工期展延、契約變更、估驗計價…）與次別，最後依「分送規則」由上而下取第一條符合者。<span id="dVer"></span></p>
   <div class="rnote" id="dErr" hidden></div>
   <h2>試算</h2>
   <p class="hint">輸入檔名或公文主旨，看會判成哪個案別、事件與目的地。</p>
@@ -481,7 +504,7 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
 </section>
 <section id="tabLab" class="rules lab" hidden>
   <h2>規則實驗室</h2>
-  <p class="hint">用已經命名、歸檔好的檔案測試目前的規則：抽幾份重新辨識，看命名規則產生的檔名、目的資料夾規則算出的位置，和原檔名、目前資料夾是否一致。只讀取檔案，不會修改或搬移；也不會影響「文字辨識命名」分頁的工作。</p>
+  <p class="hint">用已經命名、歸檔好的檔案測試目前的規則：抽幾份重新辨識，看檔名規則產生的檔名、歸檔規則算出的位置，和原檔名、目前資料夾是否一致。只讀取檔案，不會修改或搬移；也不會影響「文字辨識命名」分頁的工作。</p>
   <h3>① 選範圍，抽樣並讀取</h3>
   <p class="hint" id="lab_pinfo"></p>
   <div class="labrow">
@@ -511,13 +534,16 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
 </section>
 <section id="tabHelp" class="help" hidden>
   <h2>這個工具做什麼</h2>
-  <p>把三件常用的檔案工作放在同一頁：找素材（素材索引）、掃描檔辨識命名（文字辨識命名），以及依同一份「目的資料夾規則」把檔案送到該放的資料夾。全部在這台電腦的瀏覽器處理，不上傳任何地方。</p>
+  <p>把三件常用的檔案工作放在同一頁：找素材（素材索引）、掃描檔辨識命名（文字辨識命名），以及依同一份「歸檔規則」把檔案送到該放的資料夾。全部在這台電腦的瀏覽器處理，不上傳任何地方。</p>
   <dl class="okv" style="font-size:14px">
     <dt>素材索引</dt><dd>匯入檔案清單 CSV（或從資料夾讀取），以「資料夾」為單位列成一張總表，依路徑排序；子資料夾收在上層資料夾裡，按 ▸ 展開。資料夾名稱旁的標籤是分類規則的細項，點標籤就只看這一類。可搜尋、篩選修改日期、標別與「歸檔建議」，勾選後產生複製程式碼，或「送到建議位置」。點資料夾名稱開啟資料夾（線上版改為複製路徑，貼到檔案總管網址列）。常用的資料夾、細項或標別可按 ☆ 訂閱，再按「★ 只看訂閱」縮小範圍。</dd>
-    <dt>文字辨識命名</dt><dd>選資料夾或拖入掃描 PDF／JPG／PNG，辨識前 3 頁文字，依命名規則建議檔名、依目的資料夾規則算出存放位置；訂正確認後產生送件程式碼。</dd>
-    <dt>分類規則</dt><dd>素材索引的大類與細項。</dd>
-    <dt>命名規則</dt><dd>文件類別判定與檔名範本（規則.xlsx）；「文件類別」可直接編輯。</dd>
-    <dt>目的資料夾規則</dt><dd>案別、事件、次別與分送規則（自動歸檔規則.xlsx）；「分送規則」可直接編輯，附「試算」。</dd>
+    <dt>文字辨識命名</dt><dd>選資料夾或拖入掃描 PDF／JPG／PNG，辨識前 3 頁文字，依檔名規則建議檔名、依歸檔規則算出存放位置；訂正確認後產生送件程式碼。</dd>
+    <dt>規則</dt><dd>三份規則放在同一個分頁，上方是目錄，點開要用的那一份（再點一次收起）：
+      <ul>
+        <li><b>資料夾</b>（素材索引用）— <b>分類規則</b>：哪些檔案和本計畫有關、歸到哪個大類與細項。下載檔名 <code>資料夾_分類規則_日期.xlsx</code>；也可另存 .json。</li>
+        <li><b>命名系統</b>（文字辨識命名用）— <b>檔名規則</b>：文件類別判定與檔名範本，含辨識設定；「文件類別」可直接編輯。下載檔名 <code>命名系統_檔名規則_日期.xlsx</code>。</li>
+        <li><b>命名系統</b> — <b>歸檔規則</b>：案別、事件、次別與分送規則，決定檔案放哪個資料夾；「分送規則」可直接編輯，附「試算」。下載檔名 <code>命名系統_歸檔規則_日期.xlsx</code>（即 自動歸檔規則.xlsx）。</li>
+      </ul></dd>
     <dt>規則實驗室</dt><dd>用已經命名、歸檔好的檔案測試目前的規則：從素材索引選一個資料夾範圍抽樣，重新辨識後比對建議檔名、建議資料夾和原檔名、目前資料夾是否一致。原檔名不適合當正確答案的（例如 WebFile.pdf、0002-1.pdf），勾「排除」就不列入統計，之後也不會再抽到。</dd>
   </dl>
 
@@ -544,20 +570,20 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
     <li>原檔預設保留（只複製）；也可選「送達並核對無誤後刪除原檔」，程式會核對大小與內容一致才刪除。目的資料夾已有同名檔時略過、不覆蓋。</li>
     <li><b>退回</b>：送錯時，在文字辨識命名第 4 步按「退回上次送件…」，複製程式碼到 PowerShell 執行，選要退回的那一次（直接按 Enter＝最近一次）。已刪除原檔的會搬回原位置並改回原檔名；保留原檔的會移除送達的複本；送件時新建、退回後變空的資料夾一併移除。送達後被改過的檔案不會動。</li>
   </ol>
-  <p class="hint">不會送的檔案：沒有目的資料夾（規則判為「不歸檔」「人工」）、目的地路徑「待確認」、來源路徑含個人資料夾（○○）。可在右側手動填目的資料夾，或到目的資料夾規則確認路徑後改為「現有」。</p>
+  <p class="hint">不會送的檔案：沒有目的資料夾（規則判為「不歸檔」「人工」）、目的地路徑「待確認」、來源路徑含個人資料夾（○○）。可在右側手動填目的資料夾，或到歸檔規則確認路徑後改為「現有」。</p>
 
-  <h2>建立命名規則（逐步調整）</h2>
+  <h2>建立檔名規則（逐步調整）</h2>
   <ol>
     <li><b>先辨識一批</b>：每種常見文件挑 3～5 份，一起辨識。</li>
     <li><b>看「無法判定文件類別」的檔案</b>：在右側展開「辨識文字」，找這類文件每份都會出現、別類不會出現的詞（例如「監造暨品質月報」）。</li>
-    <li><b>新增文件類別</b>：命名規則分頁按「＋ 新增一列」，填類別名稱、判定關鍵字（多個詞用 | 分隔，須全部出現）；越專一的類別「優先序」數字越小，先判定。</li>
+    <li><b>新增文件類別</b>：「規則」分頁的「檔名規則」按「＋ 新增一列」，填類別名稱、判定關鍵字（多個詞用 | 分隔，須全部出現）；越專一的類別「優先序」數字越小，先判定。</li>
     <li><b>寫命名範本</b>：用表格下方列出的 {欄位} 組合，例如 <code>{標案}-第{期別}期估驗書</code>。需要新欄位時（例如報告年月、版次），下載規則.xlsx，在「欄位擷取」新增一列正則，再匯入。</li>
     <li><b>處理常錯字</b>：4 字以上的標案全名、廠商名稱加到「關鍵字」（模糊校正）；短詞的固定錯字加到「文字替換」。</li>
     <li><b>按「套用到已辨識的檔案」</b>：不必重新辨識，直接看新檔名；不對就回到第 3～5 步。</li>
-    <li><b>下載目前規則.xlsx</b> 保存，分享給同仁。</li>
+    <li><b>下載目前規則（.xlsx）</b> 保存，分享給同仁。</li>
   </ol>
 
-  <h2>建立目的資料夾規則（逐步調整）</h2>
+  <h2>建立歸檔規則（逐步調整）</h2>
   <ol>
     <li><b>根目錄</b>：確認「根目錄」工作表的試行值（本機測試資料夾）與正式值（共用區），在本分頁上方切換。</li>
     <li><b>案別</b>：每個標案／契約一列（代碼或代碼樣式、全名、常用簡稱、所屬計畫、施工或監造）；這張表決定能不能認出案別，最常需要補。</li>
@@ -570,11 +596,11 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
   <h2>請 AI 幫忙建立規則</h2>
   <p>最省力的方法是用 Claude 的「<b>DocRoute 規則產生器</b>」技能：交給它檔案清單，它會自己研究、用選擇題問你，再交回兩個規則檔。</p>
   <ol>
-    <li><b>準備</b>：檔案清單 CSV（可多份），以及兩個規則檔（「命名規則」「目的資料夾規則」分頁各按「下載目前規則.xlsx」）。</li>
+    <li><b>準備</b>：檔案清單 CSV（可多份），以及兩個規則檔（「規則」分頁的「檔名規則」「歸檔規則」各按「下載目前規則（.xlsx）」）。</li>
     <li><b>交給 Claude</b>，說：「幫我用這些清單建立命名和歸檔規則」。</li>
     <li><b>回答選擇題</b>：它會先說明你們的檔案大致怎麼放，再問你要處理哪些文件、哪些代碼是標案、檔名怎麼寫、要放哪個資料夾。</li>
     <li><b>拿回兩個規則檔</b>：它會一併告訴你「目前有多少檔案已在正確位置」，以及還要你確認的地方。</li>
-    <li><b>匯入</b>：在兩個規則分頁按「匯入規則.xlsx」，用「試算」輸入幾個檔名看看。</li>
+    <li><b>匯入</b>：在兩個規則分頁按「匯入規則（.xlsx）」，用「試算」輸入幾個檔名看看。</li>
     <li><b>邊用邊修</b>：遇到判錯的檔案，把檔名和你要的結果丟回給 Claude，它會再問你、再修正。</li>
   </ol>
   <p class="hint">用其他 AI、或沒有安裝技能時：另外附上「給 AI 的說明」（這份是寫給 AI 看的，你不必讀）。清單太大上傳不了時，改附「資料夾摘要」（把整個清單縮成一份資料夾樹）。只需要檔名、路徑和文件首頁文字；機密與個資請先排除，並依機關生成式 AI 使用規範辦理。</p>
@@ -583,7 +609,7 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
 
   <h2>隱私與使用規範</h2>
   <p>檔案只在這台電腦的瀏覽器中讀取與辨識。素材索引會把個人資料夾名稱遮蔽為○○。匯入的規則（含資料夾路徑）只存在這台電腦的瀏覽器；分享網頁或規則檔前，請確認其中的路徑可以公開。請依機關規定處理機密與個資文件。</p>
-  <p class="hint">辨識引擎：PaddleOCR（PP-OCRv6 small，預設，較準確）或 Tesseract 5（chi_tra+eng，較快），在「命名規則」分頁的辨識設定切換；PDF 讀取：pdf.js 3.11。</p>
+  <p class="hint">辨識引擎：PaddleOCR（PP-OCRv6 small，預設，較準確）或 Tesseract 5（chi_tra+eng，較快），在「規則」分頁的「檔名規則」的辨識設定切換；PDF 讀取：pdf.js 3.11。</p>
 </section>
 <div class="modal" id="dModal" hidden role="dialog" aria-modal="true" aria-labelledby="dTitle">
   <div class="panel">
@@ -593,7 +619,7 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
       <li>按「複製程式碼」。</li>
       <li>按 <kbd>開始</kbd>，搜尋並開啟「<b>Windows PowerShell</b>」（藍色視窗）。</li>
       <li>在視窗內按 <kbd>Ctrl</kbd>＋<kbd>V</kbd>（或按滑鼠右鍵）貼上，再按 <kbd>Enter</kbd>。</li>
-      <li>每個檔案複製到依目的資料夾規則算出的位置，資料夾不存在會自動建立；送達紀錄存在「文件\文字辨識命名工具」。</li>
+      <li>每個檔案複製到依歸檔規則算出的位置，資料夾不存在會自動建立；送達紀錄存在「文件\文字辨識命名工具」。</li>
     </ol>
     <p class="warn">程式只會「複製」，不會移動、修改或刪除原檔；目的資料夾已有同名檔時不覆蓋。</p>
     <textarea id="dCode" readonly aria-label="PowerShell 程式碼"></textarea>
@@ -603,7 +629,7 @@ details.dsheet>summary{cursor:pointer;font-weight:700;margin-bottom:6px;color:va
 <div class="tray" id="tray" hidden>
   <span>已選 <b id="selN">0</b> 個檔案</span>
   <button class="go" id="mkCode">產生複製程式碼</button>
-  <button class="go" id="mkPlan" title="依目的資料夾規則，產生把選取的檔案複製到建議位置的 PowerShell 程式碼">送到建議位置</button>
+  <button class="go" id="mkPlan" title="依歸檔規則，產生把選取的檔案複製到建議位置的 PowerShell 程式碼">送到建議位置</button>
   <button class="clear" id="selClear">清除選取</button>
 </div>
 <div class="modal" id="dirAsk" hidden role="dialog" aria-modal="true" aria-labelledby="daTitle">
@@ -1234,11 +1260,19 @@ function refreshMemoryButtons(){
 }
 
 // ===== 分頁 =====
-const TABS = {index: 'tabIndex', ocr: 'o_tab-work', rules: 'tabRules', naming: 'o_tab-rules', dest: 'tabDest', lab: 'tabLab', help: 'tabHelp'};
+const TABS = {index: 'tabIndex', ocr: 'o_tab-work', hub: 'tabHub', rules: 'tabRules', naming: 'o_tab-rules', dest: 'tabDest', lab: 'tabLab', help: 'tabHelp'};
+const RSUB = ['rules', 'naming', 'dest'];   // 「規則」分頁內的三份規則：分類（資料夾）、檔名與歸檔（命名系統）
+function hubStatus(){
+  const g = id => { const e = document.getElementById(id); return e ? e.textContent.replace(/\s+/g, ' ').trim() : ''; };
+  $('hubS_rules').textContent = g('rState'); $('hubS_naming').textContent = g('o_ruleSrc'); $('hubS_dest').textContent = g('dSrc');
+}
 function showTab(t){
   if(window.ocrCommit) window.ocrCommit();
-  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
-  for(const [k, id] of Object.entries(TABS)) $(id).hidden = k !== t;
+  const nav = RSUB.includes(t) ? 'hub' : t;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === nav));
+  for(const [k, id] of Object.entries(TABS)) $(id).hidden = !(k === t || (k === 'hub' && nav === 'hub'));
+  document.querySelectorAll('.hubcard').forEach(b => { b.classList.toggle('on', b.dataset.rsub === t); b.setAttribute('aria-expanded', b.dataset.rsub === t); });
+  if(nav === 'hub') hubStatus();
   $('tray').hidden = t !== 'index' || SEL.size === 0;
   if(t === 'rules') renderRuleStats();
   if(t === 'index' && DB) render();
@@ -1456,26 +1490,49 @@ $('rReset').addEventListener('click', () => {
   if(!confirm('還原成預設規則？（按「套用」後才生效）')) return;
   const keep = RULES; RULES = clone(BUILTIN_RULES.set); renderRules(); RULES = keep; setDirty(true);
 });
+const CAT_SCOPE = {path: '路徑＋檔名', name: '只看檔名'};
+const ymdNow = () => { const d = new Date(); return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`; };
+function catRulesToGrids(rs){
+  const j = a => (a || []).join('、');
+  return {
+    '細項': [['大類', '細項', '關鍵字（用「、」分隔）', '比對範圍（路徑＋檔名／只看檔名）']].concat(rs.rules.map(r => [r.cat, r.sub, j(r.kw), CAT_SCOPE[r.scope === 'name' ? 'name' : 'path']])),
+    '計畫判定': [['項目', '內容（用「、」分隔）'], ['計畫或站名關鍵字', j(rs.project.keywords)], ['標別代碼', j(rs.project.codes)], ['其他路徑關鍵字', j(rs.project.extra)]],
+    '其他設定': [['項目', '內容（用「、」分隔）'], ['不列入的副檔名', j(rs.junk)], ['個人資料夾判定的例外名稱', j(rs.notPerson)], ['網頁標題', rs.title || '']],
+    '說明': [['說明'], ['素材索引的分類規則。可直接在 Excel 修改後，到網頁「規則」→「分類規則」按「匯入規則」。'], ['「細項」：符合任一關鍵字就歸入該細項；比對範圍填「只看檔名」時不看資料夾名稱。'], ['「計畫判定」：路徑或檔名含任一關鍵字，就視為和本計畫有關；標別代碼比對「代碼＋標」。'], ['也可在網頁按「另存 .json」存成舊格式。']]
+  };
+}
+function catRulesFromGrids(g){
+  const sp = v => splitList(v == null ? '' : String(v));
+  const kv = name => { const m = {}; for(const r of (g[name] || []).slice(1)) if(r && r[0]) m[String(r[0]).trim()] = r[1]; return m; };
+  if(!g['細項']) throw new Error('找不到「細項」工作表');
+  const p = kv('計畫判定'), o = kv('其他設定');
+  const rules = g['細項'].slice(1).filter(r => r && (r[0] || r[1])).map(r => ({cat: String(r[0] || '').trim(), sub: String(r[1] || '').trim(), kw: sp(r[2]), scope: String(r[3] || '').includes('只看檔名') ? 'name' : 'path'}));
+  const title = String(o['網頁標題'] || '').trim();
+  return {version: 1, project: {keywords: sp(p['計畫或站名關鍵字']), codes: sp(p['標別代碼']).map(x => x.toUpperCase()), extra: sp(p['其他路徑關鍵字'])},
+    rules, junk: sp(o['不列入的副檔名']), notPerson: sp(o['個人資料夾判定的例外名稱']), ...(title ? {title} : {})};
+}
 $('rExport').addEventListener('click', () => {
   const rs = rulesDirty ? collectRules() : RULES;
-  const d = new Date(); const ymd = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-  download(`chiayi-index-rules_${ymd}.json`, JSON.stringify(rs, null, 2));   // 用英數檔名，部分瀏覽器會忽略中文下載檔名
-  toast(rulesDirty ? '已匯出（包含尚未套用的變更）' : '已匯出規則檔');
+  saveBlob(`資料夾_分類規則_${ymdNow()}.xlsx`, new Blob([XlsxWriter.write(catRulesToGrids(rs))], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), '.xlsx');
+  toast(rulesDirty ? '已下載（包含尚未套用的變更）' : '已下載分類規則');
+});
+$('rExportJson').addEventListener('click', () => {
+  const rs = rulesDirty ? collectRules() : RULES;
+  download(`index-rules_${ymdNow()}.json`, JSON.stringify(rs, null, 2));   // 每月彙整程式 -RulesFile 用；英數檔名
+  toast('已另存 .json');
 });
 $('rImport').addEventListener('click', () => $('rFile').click());
-$('rFile').addEventListener('change', e => {
+$('rFile').addEventListener('change', async e => {
   const f = e.target.files[0]; e.target.value = ''; if(!f) return;
-  const fr = new FileReader();
-  fr.onload = () => {
-    try{
-      const r = JSON.parse(String(fr.result).replace(/^﻿/, ''));
-      if(!r.project || !Array.isArray(r.rules)) throw new Error('格式不符');
-      delete r.restricted;
-      const keep = RULES; RULES = r; renderRules(); RULES = keep; setDirty(true);
-      toast('已讀入規則檔，確認後請按「套用並重新分類」');
-    }catch(err){ alert('無法讀取規則檔：' + err.message); }
-  };
-  fr.readAsText(f, 'utf-8');
+  try{
+    let r;
+    if(/\.xlsx$/i.test(f.name)) r = catRulesFromGrids(await Engine.readXlsx(await f.arrayBuffer(), parseXml));
+    else r = JSON.parse((await f.text()).replace(/^﻿/, ''));
+    if(!r.project || !Array.isArray(r.rules)) throw new Error('格式不符');
+    delete r.restricted;
+    const keep = RULES; RULES = r; renderRules(); RULES = keep; setDirty(true);
+    toast('已讀入規則檔，確認後請按「套用並重新分類」');
+  }catch(err){ alert('無法讀取規則檔：' + err.message); }
 });
 
 // ===== 事件 =====
@@ -1992,7 +2049,7 @@ const Engine = (() => {
 })();
 if(typeof module !== 'undefined') module.exports = Engine;
 </script>
-<script>// ===== 規則表格編輯器與 xlsx 寫出（命名規則「文件類別」、目的資料夾規則「分送規則」共用） =====
+<script>// ===== 規則表格編輯器與 xlsx 寫出（檔名規則「文件類別」、歸檔規則「分送規則」共用） =====
 const XlsxWriter = (() => {
   const CRC = (() => { const t = new Uint32Array(256); for(let n = 0; n < 256; n++){ let c = n; for(let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
   const crc32 = u => { let c = 0xFFFFFFFF; for(let i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
@@ -2145,7 +2202,7 @@ const SheetEditor = (() => {
   return {render, isOn};
 })();
 </script>
-<script>// ===== 目的資料夾規則引擎（規則：自動歸檔規則.xlsx） =====
+<script>// ===== 歸檔規則引擎（規則：自動歸檔規則.xlsx） =====
 // 對一段文字（檔名或 OCR 命名結果）判斷 案別／事件／次別／階段／文種，產生建議檔名與目的地。
 const DestEngine = (() => {
   const CN = {'零': 0, '一': 1, '二': 2, '兩': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9};
@@ -2169,7 +2226,7 @@ const DestEngine = (() => {
   const truthy = v => !(v === null || v === undefined || v === '' || v === 0 || v === false);
   // 與 Python 版 sheet() 相同：第一列為標題，空白格為 null
   function sheet(grids, name){
-    const g = grids[name]; if(!g) throw new Error(`目的資料夾規則缺少工作表「${name}」`);
+    const g = grids[name]; if(!g) throw new Error(`歸檔規則缺少工作表「${name}」`);
     const head = Array.from(g[0] || [], h => pyStr(h));
     const out = [];
     for(const r of g.slice(1)){
@@ -2394,7 +2451,7 @@ if(typeof module !== 'undefined') module.exports = DestEngine;
 <script>
 const DEST_XLSX_B64 = "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";
 const DEST_XLSX_DATE = "通用範本 1.0";
-// ===== 目的資料夾規則（素材索引與文字辨識命名共用；規則沿用 自動歸檔規則_v2草案.xlsx） =====
+// ===== 歸檔規則（素材索引與文字辨識命名共用；規則沿用 自動歸檔規則_v2草案.xlsx） =====
 const parseXml = x => new DOMParser().parseFromString(x, 'application/xml');
 const b64bytes = b64 => { const s = atob(b64); const u = new Uint8Array(s.length); for(let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; };
 const DEST = {E: null, grids: null, bytes: null, label: '', ver: 0, rootKey: '正式值', saveT: 0};
@@ -2417,7 +2474,7 @@ function destOf(name){ return DEST.E ? DestEngine.classify(DEST.E, name) : null;
 const destRoot = () => (DEST.E && DEST.E.roots['專區']) || '';
 const shortDest = p => { const r = destRoot(); return r && p.toLowerCase().startsWith(r.toLowerCase()) ? '{專區}' + p.slice(r.length) : p; };
 
-// ---- 目的資料夾規則分頁 ----
+// ---- 歸檔規則分頁 ----
 function renderDestTab(){
   if(!DEST.E) return;
   $('dSrc').textContent = '目前使用：' + DEST.label;
@@ -2494,11 +2551,11 @@ $('dRoot').addEventListener('change', async () => { DEST.rootKey = $('dRoot').va
 $('dImp').addEventListener('click', () => $('dFile').click());
 $('dFile').addEventListener('change', async () => {
   const f = $('dFile').files[0]; $('dFile').value = ''; if(!f) return;
-  try{ const bytes = new Uint8Array(await f.arrayBuffer()); const label = `${f.name}（${new Date().toLocaleString('zh-TW', {hour12: false})} 匯入）`; await loadDest(bytes, label); await DestKV.set('destRules', {bytes, label}); toast('已匯入目的資料夾規則'); }
+  try{ const bytes = new Uint8Array(await f.arrayBuffer()); const label = `${f.name}（${new Date().toLocaleString('zh-TW', {hour12: false})} 匯入）`; await loadDest(bytes, label); await DestKV.set('destRules', {bytes, label}); toast('已匯入歸檔規則'); }
   catch(e){ alert('規則檔讀取失敗：' + (e.message || e)); }
 });
 $('dReset').addEventListener('click', async () => { await DestKV.del('destRules'); await loadDest(b64bytes(DEST_XLSX_B64), `內建 自動歸檔規則.xlsx（${DEST_XLSX_DATE}）`); toast('已還原內建規則'); });
-$('dDl').addEventListener('click', () => { if(DEST.saveT) saveDest(); saveBlob('自動歸檔規則.xlsx', new Blob([DEST.bytes], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), '.xlsx'); });
+$('dDl').addEventListener('click', () => { if(DEST.saveT) saveDest(); saveBlob(`命名系統_歸檔規則_${ymdNow()}.xlsx`, new Blob([DEST.bytes], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), '.xlsx'); });
 
 async function saveBlob(name, blob, ext){
   if(window.showSaveFilePicker){
@@ -2602,11 +2659,11 @@ $('dClose').addEventListener('click', () => { $('dModal').hidden = true; });
 $('dModal').addEventListener('click', e => { if(e.target === $('dModal')) $('dModal').hidden = true; });
 
 window.DEST_READY = (async () => {
-  try{ const s = await DestKV.get('destRules'); if(s && s.bytes){ await loadDest(s.bytes, s.label); return; } }catch(e){ toast('上次匯入的目的資料夾規則讀取失敗，改用內建規則'); }
+  try{ const s = await DestKV.get('destRules'); if(s && s.bytes){ await loadDest(s.bytes, s.label); return; } }catch(e){ toast('上次匯入的歸檔規則讀取失敗，改用內建規則'); }
   await loadDest(b64bytes(DEST_XLSX_B64), `內建 自動歸檔規則.xlsx（${DEST_XLSX_DATE}）`);
 })();
 // ===== 請 AI 協助：前置說明與資料夾結構摘要 =====
-const AI_GUIDE = "# 給 AI 的前置說明：檔案整理工具（DocRoute）規則調整\n\n請先讀完本說明，再依使用者提供的規則檔、範例與資料夾摘要調整規則。\n\n## 1. 你的任務\n\n使用者用一個離線網頁工具整理公務檔案：掃描檔先辨識文字，依「命名規則」產生建議檔名，再依「目的資料夾規則」算出要放的資料夾，最後用 PowerShell 程式碼把檔案複製過去。你要協助修改規則檔，讓指定的文件得到使用者期望的**檔名**與**目的資料夾**，並且**不要改變其他文件原本正確的結果**。\n\n## 2. 工具處理流程\n\n1. 取文字：每份讀前 3 頁；頁面有 50 字以上文字層就直接用，否則以 Tesseract（繁中＋英文）辨識。辨識文字常有錯字、中文字之間多空格、行首多出 `:` `;` `|` 等雜訊。\n2. 正規化：全形轉半形（NFKC）→ 刪除每行開頭的 `:` `;` `|` → 刪除所有空白。**之後所有比對都套用在正規化後的文字上**，所以括號、冒號請用半形 `( ) :`，關鍵字中不要放空白。\n3. 關鍵字校正 → 文字替換 → 判定文件類別 → 依命名範本組檔名。\n4. 判定不出類別或缺欄位時，會忽略文字層、改用彩色影像再辨識一次，兩次文字合併後重新判定。\n5. 用「最終檔名」（使用者可能已修改）判定目的資料夾。素材索引分頁則用原檔名判定。\n\n## 3. 命名規則（規則.xlsx）\n\n| 工作表 | 欄位 | 規則 |\n|---|---|---|\n| 文件類別 | TypeID、類別名稱、優先序、判定關鍵字、判定正則、命名範本、目標資料夾ID、啟用、需人工確認 | 只看啟用＝TRUE 的列，依「優先序」由小到大檢查；「判定關鍵字」以 `\\|` 分隔、**全部**出現才算，且「判定正則」（有填時）要命中；第一個成立的類別生效。兩欄都空白的列永遠不成立。越專一的類別優先序要越小。 |\n| 欄位擷取 | 欄位名稱、正則、輸出格式、轉換、說明、啟用 | 命名範本中的 `{欄位名稱}` 取自此表：對文字執行正則搜尋（第一個符合處）；「輸出格式」為 Python `str.format`，`{0}`＝整段、`{1}{2}`…＝括號群組，可用 `{2:0>2}` 補零；正則沒有括號時用 `{0}`。「轉換」可填「西元轉民國」（第 1 組減 1911）、「全形標點」（, : ; ( ) ? ! 轉全形）。正則留空＝文件內沒有此欄位。 |\n| 關鍵字 | KeywordID、類型、標準值、別名、最低相似度、啟用 | 4 字以上的標準值（或 `\\|` 分隔的別名）做模糊比對（相似度≥最低相似度，預設 90），把辨識錯字校正成標準值。適合放標案全名、廠商、機關名稱。 |\n| 文字替換 | ReplaceID、正則、取代為、說明、啟用 | 4 字以下、模糊比對管不到的固定錯字：正則命中處換成「取代為」（純文字，不支援 `\\1`）。 |\n| 分送對照 | （舊欄位） | 已由目的資料夾規則取代，保持空白即可。 |\n\n命名範本中任一欄位抓不到 → 不產生檔名、標「待確認」；「需人工確認」＝TRUE 的類別即使有檔名也標「待確認」。檔名中的 Windows 禁用字元 `< > : \" / \\ | ? *` 會換成 `_`，副檔名自動保留。\n\n## 4. 目的資料夾規則（自動歸檔規則*.xlsx）\n\n判定輸入是一段文字（通常是檔名）。正規化：全形轉半形、刪除空白、「第二次／第十二期／第三階段」的國字數字轉阿拉伯數字。\n\n1. **日期**：開頭的 7 碼民國日期（`^1\\d{6}`，可在「線上_數字_xxx_」前綴之後）。\n2. **案別**（工作表「案別」，啟用＝Y）：先在第一個「」內找標案代碼或別名；找不到再在全文找代碼（「代碼樣式」正則，前後不可緊接英數字）；再找別名（`|` 分隔，最長的優先，類型為「計畫」的別名最後才用）。案代碼填 `{代碼}` 的列表示代碼本身就是案代碼。「含詞轉案」如 `監造=○○監造`：只認到計畫層級但文字含「監造」時，改判為指定的案。案別決定 `{案}`、`{計畫}` 與「案類型」（施工／監造／專管／計畫）。\n3. **全域排除**：命中「排除詞」的直接採用該列的動作（不歸檔／人工）。\n4. **事件**（工作表「事件」）：先從文字刪掉案名、別名與標案代碼，得到「主句」；主句有「因…致／衍生／導致／需…」時只看後半句。依優先序取第一個「判定詞」命中、且「排除詞」未命中的事件。\n5. **次別**（工作表「次別樣式」）：在事件詞前後 20 字內找最近的「第N次」「CCO-N」「N變」「NTPN」「第N期」，補零成兩位數；估驗計價只採用「第N期」，其他事件不採用「第N期」。\n6. 階段、文種、版次、文件類別、工作代碼：只影響建議檔名，不影響資料夾。\n7. **分送規則**（工作表「分送規則」，啟用＝Y）：**由上而下取第一條符合者**。條件欄：事件（`*`＝任何事件；`（無事件）`＝沒有事件但有日期）、案類型、計畫（`*` 或空白＝不限）、需要次別（「數字」＝要有數字次別）。動作：搬移／人工／不歸檔。目的地樣板可用「根目錄」工作表的任一變數（如 `{專區}`）以及 `{計畫}`、`{案}`、`{n}`（次別，不補零）、`{法律期間}`。\n8. 「路徑狀態」＝待確認的規則不會產生送件程式碼；確認資料夾存在後才改為「現有」。\n\n## 5. 分類規則（素材索引用，.json）\n\n`project.keywords`／`codes`／`extra`：路徑含任一項即視為相關（三者皆空＝全部相關；codes 比對「代碼＋標」）。`rules`：`{cat 大類, sub 細項, kw 關鍵字陣列, scope \"path\"（整個路徑）或 \"name\"（只看檔名）}`，比對不分大小寫，可同時屬於多個細項。\n\n## 6. 正則與檔案格式限制\n\n- 正則用 **Python `re` 語法**撰寫，且必須同時能在 **JavaScript** 執行：不要用行內旗標 `(?i)`、`(?x)`、原子群組、佔有量詞、`\\p{…}`；後顧斷言 `(?<!…)`、`(?<=…)` 必須是固定長度；具名群組可用 `(?P<名稱>…)`。\n- 命名規則與目的資料夾規則的比對**區分大小寫**；需要時寫成 `[Aa]` 或列出兩種寫法。\n- 不要更改工作表名稱、欄位名稱與欄位順序；不要刪除未提到的工作表。\n- 「啟用」：命名規則用 TRUE／FALSE；目的資料夾規則用 Y／N。\n- TypeID、ReplaceID、規則ID 不可重複；新增的分送規則要放在 `*`、`（無事件）` 這類通用規則**之前**。\n- 不要猜測資料夾路徑：使用者沒有確認的路徑，「路徑狀態」一律填「待確認」，並在回覆中列為待確認事項。\n\n## 7. 回覆格式\n\n1. **修改後的檔案**：能輸出檔案時，回傳修改後的 `規則.xlsx`／`自動歸檔規則*.xlsx`（保留所有工作表）。不能輸出檔案時，以表格列出每個工作表要「新增／修改／刪除」的列，每列寫出完整欄位值，方便使用者在網頁表格或 Excel 逐格填入。\n2. **變更清單**：每一項改了哪個工作表、哪一列、為什麼。\n3. **逐一推演範例**：每個範例寫出預期的文件類別、各欄位值、檔名、案別、事件、次別、命中的分送規則 ID 與目的地。\n4. **影響評估**：哪些原本的文件可能因此改變結果、風險在哪裡。\n5. **待確認事項**：資料夾是否存在、命名慣例不明確之處，以問題列出，不要自行假設。\n\n## 8. 自我檢查清單\n\n- [ ] 每個新正則都符合第 6 節限制，並以範例文字（正規化後）實際比對過。\n- [ ] 新文件類別的優先序不會搶走其他類別的文件（判定詞夠專一）。\n- [ ] 命名範本用到的 `{欄位}` 都存在於「欄位擷取」且已啟用。\n- [ ] 分送規則順序正確：專一的在上、通用的在下。\n- [ ] 目的地樣板的變數都存在；路徑未經確認的標「待確認」。\n- [ ] 沒有更動與本次需求無關的列。\n";
+const AI_GUIDE = "# 給 AI 的前置說明：檔案整理工具（DocRoute）規則調整\n\n請先讀完本說明，再依使用者提供的規則檔、範例與資料夾摘要調整規則。\n\n## 1. 你的任務\n\n使用者用一個離線網頁工具整理公務檔案：掃描檔先辨識文字，依「檔名規則」產生建議檔名，再依「歸檔規則」算出要放的資料夾，最後用 PowerShell 程式碼把檔案複製過去。你要協助修改規則檔，讓指定的文件得到使用者期望的**檔名**與**目的資料夾**，並且**不要改變其他文件原本正確的結果**。\n\n## 2. 工具處理流程\n\n1. 取文字：每份讀前 3 頁；頁面有 50 字以上文字層就直接用，否則以 Tesseract（繁中＋英文）辨識。辨識文字常有錯字、中文字之間多空格、行首多出 `:` `;` `|` 等雜訊。\n2. 正規化：全形轉半形（NFKC）→ 刪除每行開頭的 `:` `;` `|` → 刪除所有空白。**之後所有比對都套用在正規化後的文字上**，所以括號、冒號請用半形 `( ) :`，關鍵字中不要放空白。\n3. 關鍵字校正 → 文字替換 → 判定文件類別 → 依命名範本組檔名。\n4. 判定不出類別或缺欄位時，會忽略文字層、改用彩色影像再辨識一次，兩次文字合併後重新判定。\n5. 用「最終檔名」（使用者可能已修改）判定目的資料夾。素材索引分頁則用原檔名判定。\n\n## 3. 檔名規則（規則.xlsx）\n\n| 工作表 | 欄位 | 規則 |\n|---|---|---|\n| 文件類別 | TypeID、類別名稱、優先序、判定關鍵字、判定正則、命名範本、目標資料夾ID、啟用、需人工確認 | 只看啟用＝TRUE 的列，依「優先序」由小到大檢查；「判定關鍵字」以 `\\|` 分隔、**全部**出現才算，且「判定正則」（有填時）要命中；第一個成立的類別生效。兩欄都空白的列永遠不成立。越專一的類別優先序要越小。 |\n| 欄位擷取 | 欄位名稱、正則、輸出格式、轉換、說明、啟用 | 命名範本中的 `{欄位名稱}` 取自此表：對文字執行正則搜尋（第一個符合處）；「輸出格式」為 Python `str.format`，`{0}`＝整段、`{1}{2}`…＝括號群組，可用 `{2:0>2}` 補零；正則沒有括號時用 `{0}`。「轉換」可填「西元轉民國」（第 1 組減 1911）、「全形標點」（, : ; ( ) ? ! 轉全形）。正則留空＝文件內沒有此欄位。 |\n| 關鍵字 | KeywordID、類型、標準值、別名、最低相似度、啟用 | 4 字以上的標準值（或 `\\|` 分隔的別名）做模糊比對（相似度≥最低相似度，預設 90），把辨識錯字校正成標準值。適合放標案全名、廠商、機關名稱。 |\n| 文字替換 | ReplaceID、正則、取代為、說明、啟用 | 4 字以下、模糊比對管不到的固定錯字：正則命中處換成「取代為」（純文字，不支援 `\\1`）。 |\n| 分送對照 | （舊欄位） | 已由歸檔規則取代，保持空白即可。 |\n\n命名範本中任一欄位抓不到 → 不產生檔名、標「待確認」；「需人工確認」＝TRUE 的類別即使有檔名也標「待確認」。檔名中的 Windows 禁用字元 `< > : \" / \\ | ? *` 會換成 `_`，副檔名自動保留。\n\n## 4. 歸檔規則（自動歸檔規則*.xlsx）\n\n判定輸入是一段文字（通常是檔名）。正規化：全形轉半形、刪除空白、「第二次／第十二期／第三階段」的國字數字轉阿拉伯數字。\n\n1. **日期**：開頭的 7 碼民國日期（`^1\\d{6}`，可在「線上_數字_xxx_」前綴之後）。\n2. **案別**（工作表「案別」，啟用＝Y）：先在第一個「」內找標案代碼或別名；找不到再在全文找代碼（「代碼樣式」正則，前後不可緊接英數字）；再找別名（`|` 分隔，最長的優先，類型為「計畫」的別名最後才用）。案代碼填 `{代碼}` 的列表示代碼本身就是案代碼。「含詞轉案」如 `監造=○○監造`：只認到計畫層級但文字含「監造」時，改判為指定的案。案別決定 `{案}`、`{計畫}` 與「案類型」（施工／監造／專管／計畫）。\n3. **全域排除**：命中「排除詞」的直接採用該列的動作（不歸檔／人工）。\n4. **事件**（工作表「事件」）：先從文字刪掉案名、別名與標案代碼，得到「主句」；主句有「因…致／衍生／導致／需…」時只看後半句。依優先序取第一個「判定詞」命中、且「排除詞」未命中的事件。\n5. **次別**（工作表「次別樣式」）：在事件詞前後 20 字內找最近的「第N次」「CCO-N」「N變」「NTPN」「第N期」，補零成兩位數；估驗計價只採用「第N期」，其他事件不採用「第N期」。\n6. 階段、文種、版次、文件類別、工作代碼：只影響建議檔名，不影響資料夾。\n7. **分送規則**（工作表「分送規則」，啟用＝Y）：**由上而下取第一條符合者**。條件欄：事件（`*`＝任何事件；`（無事件）`＝沒有事件但有日期）、案類型、計畫（`*` 或空白＝不限）、需要次別（「數字」＝要有數字次別）。動作：搬移／人工／不歸檔。目的地樣板可用「根目錄」工作表的任一變數（如 `{專區}`）以及 `{計畫}`、`{案}`、`{n}`（次別，不補零）、`{法律期間}`。\n8. 「路徑狀態」＝待確認的規則不會產生送件程式碼；確認資料夾存在後才改為「現有」。\n\n## 5. 分類規則（素材索引用，.json）\n\n`project.keywords`／`codes`／`extra`：路徑含任一項即視為相關（三者皆空＝全部相關；codes 比對「代碼＋標」）。`rules`：`{cat 大類, sub 細項, kw 關鍵字陣列, scope \"path\"（整個路徑）或 \"name\"（只看檔名）}`，比對不分大小寫，可同時屬於多個細項。\n\n## 6. 正則與檔案格式限制\n\n- 正則用 **Python `re` 語法**撰寫，且必須同時能在 **JavaScript** 執行：不要用行內旗標 `(?i)`、`(?x)`、原子群組、佔有量詞、`\\p{…}`；後顧斷言 `(?<!…)`、`(?<=…)` 必須是固定長度；具名群組可用 `(?P<名稱>…)`。\n- 檔名規則與歸檔規則的比對**區分大小寫**；需要時寫成 `[Aa]` 或列出兩種寫法。\n- 不要更改工作表名稱、欄位名稱與欄位順序；不要刪除未提到的工作表。\n- 「啟用」：檔名規則用 TRUE／FALSE；歸檔規則用 Y／N。\n- TypeID、ReplaceID、規則ID 不可重複；新增的分送規則要放在 `*`、`（無事件）` 這類通用規則**之前**。\n- 不要猜測資料夾路徑：使用者沒有確認的路徑，「路徑狀態」一律填「待確認」，並在回覆中列為待確認事項。\n\n## 7. 回覆格式\n\n1. **修改後的檔案**：能輸出檔案時，回傳修改後的 `規則.xlsx`／`自動歸檔規則*.xlsx`（保留所有工作表）。不能輸出檔案時，以表格列出每個工作表要「新增／修改／刪除」的列，每列寫出完整欄位值，方便使用者在網頁表格或 Excel 逐格填入。\n2. **變更清單**：每一項改了哪個工作表、哪一列、為什麼。\n3. **逐一推演範例**：每個範例寫出預期的文件類別、各欄位值、檔名、案別、事件、次別、命中的分送規則 ID 與目的地。\n4. **影響評估**：哪些原本的文件可能因此改變結果、風險在哪裡。\n5. **待確認事項**：資料夾是否存在、命名慣例不明確之處，以問題列出，不要自行假設。\n\n## 8. 自我檢查清單\n\n- [ ] 每個新正則都符合第 6 節限制，並以範例文字（正規化後）實際比對過。\n- [ ] 新文件類別的優先序不會搶走其他類別的文件（判定詞夠專一）。\n- [ ] 命名範本用到的 `{欄位}` 都存在於「欄位擷取」且已啟用。\n- [ ] 分送規則順序正確：專一的在上、通用的在下。\n- [ ] 目的地樣板的變數都存在；路徑未經確認的標「待確認」。\n- [ ] 沒有更動與本次需求無關的列。\n";
 const mdCell = v => String(v === true ? 'TRUE' : v === false ? 'FALSE' : (v == null ? '' : v)).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
 function mdTable(head, rows){ return ['| ' + head.join(' | ') + ' |', '|' + head.map(() => '---').join('|') + '|'].concat(rows.map(r => '| ' + r.map(mdCell).join(' | ') + ' |')).join('\n'); }
 function aiRulesSummary(){
@@ -2615,19 +2672,19 @@ function aiRulesSummary(){
   const ns = window.namingSheets ? window.namingSheets() : null;
   if(ns){
     const t = (ns['文件類別'] || []).filter(r => on(r['啟用']));
-    out.push('### 命名規則：文件類別（啟用中，依優先序）', '', mdTable(['TypeID', '類別名稱', '優先序', '判定關鍵字', '判定正則', '命名範本', '需人工確認'], t.slice().sort((a, b) => (+a['優先序'] || 0) - (+b['優先序'] || 0)).map(r => [r.TypeID, r['類別名稱'], r['優先序'], r['判定關鍵字'], r['判定正則'], r['命名範本'], r['需人工確認']])), '');
-    out.push('### 命名規則：欄位擷取（啟用中）', '', mdTable(['欄位名稱', '正則', '輸出格式', '轉換'], (ns['欄位擷取'] || []).filter(r => on(r['啟用'])).map(r => [r['欄位名稱'], r['正則'], r['輸出格式'], r['轉換']])), '');
+    out.push('### 檔名規則：文件類別（啟用中，依優先序）', '', mdTable(['TypeID', '類別名稱', '優先序', '判定關鍵字', '判定正則', '命名範本', '需人工確認'], t.slice().sort((a, b) => (+a['優先序'] || 0) - (+b['優先序'] || 0)).map(r => [r.TypeID, r['類別名稱'], r['優先序'], r['判定關鍵字'], r['判定正則'], r['命名範本'], r['需人工確認']])), '');
+    out.push('### 檔名規則：欄位擷取（啟用中）', '', mdTable(['欄位名稱', '正則', '輸出格式', '轉換'], (ns['欄位擷取'] || []).filter(r => on(r['啟用'])).map(r => [r['欄位名稱'], r['正則'], r['輸出格式'], r['轉換']])), '');
     const kw = (ns['關鍵字'] || []).filter(r => on(r['啟用'])).map(r => r['標準值']);
-    out.push('### 命名規則：關鍵字校正（啟用中）', '', kw.length ? kw.map(k => '- ' + k).join('\n') : '（無）', '');
+    out.push('### 檔名規則：關鍵字校正（啟用中）', '', kw.length ? kw.map(k => '- ' + k).join('\n') : '（無）', '');
     const rp = (ns['文字替換'] || []).filter(r => on(r['啟用']));
-    out.push('### 命名規則：文字替換（啟用中）', '', rp.length ? mdTable(['正則', '取代為'], rp.map(r => [r['正則'], r['取代為']])) : '（無）', '');
+    out.push('### 檔名規則：文字替換（啟用中）', '', rp.length ? mdTable(['正則', '取代為'], rp.map(r => [r['正則'], r['取代為']])) : '（無）', '');
   }
   if(DEST.grids){
     const rows = n => { const g = DEST.grids[n] || []; const h = Array.from(g[0] || [], x => x == null ? '' : String(x)); return g.slice(1).filter(r => r && Array.from(r).some(v => v !== null && v !== undefined && v !== '')).map(r => Object.fromEntries(h.map((k, i) => [k, r[i]]))); };
-    out.push('### 目的資料夾規則：根目錄', '', mdTable(['變數', '試行值', '正式值'], rows('根目錄').map(r => [r['變數'], r['試行值'], r['正式值']])), `（網頁目前使用：${DEST.rootKey}）`, '');
-    out.push('### 目的資料夾規則：案別（啟用中）', '', mdTable(['案代碼', '計畫', '類型', '代碼樣式', '別名', '含詞轉案'], rows('案別').filter(r => on(r['啟用'] ?? 'Y')).map(r => [r['案代碼'], r['計畫'], r['類型'], r['代碼樣式'], r['別名'], r['含詞轉案']])), '');
-    out.push('### 目的資料夾規則：事件', '', mdTable(['名稱', '標記', '判定詞', '排除詞', '優先序'], rows('事件').map(r => [r['名稱'], r['標記'], r['判定詞'], r['排除詞'], r['優先序']])), '');
-    out.push('### 目的資料夾規則：分送規則（由上而下）', '', mdTable(['規則ID', '啟用', '事件', '案類型', '計畫', '需要次別', '動作', '目的地樣板', '路徑狀態'], rows('分送規則').map(r => [r['規則ID'], r['啟用'], r['事件'], r['案類型'], r['計畫'], r['需要次別'], r['動作'], r['目的地樣板'], r['路徑狀態']])), '');
+    out.push('### 歸檔規則：根目錄', '', mdTable(['變數', '試行值', '正式值'], rows('根目錄').map(r => [r['變數'], r['試行值'], r['正式值']])), `（網頁目前使用：${DEST.rootKey}）`, '');
+    out.push('### 歸檔規則：案別（啟用中）', '', mdTable(['案代碼', '計畫', '類型', '代碼樣式', '別名', '含詞轉案'], rows('案別').filter(r => on(r['啟用'] ?? 'Y')).map(r => [r['案代碼'], r['計畫'], r['類型'], r['代碼樣式'], r['別名'], r['含詞轉案']])), '');
+    out.push('### 歸檔規則：事件', '', mdTable(['名稱', '標記', '判定詞', '排除詞', '優先序'], rows('事件').map(r => [r['名稱'], r['標記'], r['判定詞'], r['排除詞'], r['優先序']])), '');
+    out.push('### 歸檔規則：分送規則（由上而下）', '', mdTable(['規則ID', '啟用', '事件', '案類型', '計畫', '需要次別', '動作', '目的地樣板', '路徑狀態'], rows('分送規則').map(r => [r['規則ID'], r['啟用'], r['事件'], r['案類型'], r['計畫'], r['需要次別'], r['動作'], r['目的地樣板'], r['路徑狀態']])), '');
   }
   return out.join('\n');
 }
@@ -2733,7 +2790,7 @@ function buildLayoutSummary(maxLines = 1500){
     ...tree, '',
     '## 請 AI 協助的事項（可依需要刪改）', '',
     '1. 依上面的資料夾樹，整理目前的文件分類邏輯（依計畫、標案、文件類型、年度…）。',
-    '2. 建議「目的資料夾規則」：案別（標案／契約代碼、全名、簡稱）與分送規則（哪類文件放哪個資料夾）；路徑請沿用現有資料夾名稱，無法確定的標「待確認」。',
+    '2. 建議「歸檔規則」：案別（標案／契約代碼、全名、簡稱）與分送規則（哪類文件放哪個資料夾）；路徑請沿用現有資料夾名稱，無法確定的標「待確認」。',
     '3. 指出命名不一致、疑似放錯位置或重複的資料夾，建議統一的命名方式。',
     '4. 建議先處理哪幾類文件（數量多、規則明確者優先）。'
   ].join('\n');
@@ -2756,6 +2813,7 @@ $('dlScan').addEventListener('click', async () => {
   if(name) toast(`已下載 ${name}，點兩下執行即可`);
 });
 
+document.querySelectorAll('.hubcard').forEach(b => b.addEventListener('click', () => { const open = !$(TABS[b.dataset.rsub]).hidden; showTab(open ? 'hub' : b.dataset.rsub); if(!open) $(TABS[b.dataset.rsub]).scrollIntoView({block: 'start', behavior: 'smooth'}); }));
 try{ const lt = localStorage.getItem('檔案整理_分頁'); if(lt && lt !== 'index' && TABS[lt]) showTab(lt); }catch(_){}
 </script>
 <script>
@@ -2847,7 +2905,7 @@ function namingEdited(){
   RULE_SAVE_T = setTimeout(saveNaming, 400);
 }
 function saveNaming(){ clearTimeout(RULE_SAVE_T); RULE_BYTES = XlsxWriter.write(RULE_GRIDS); KV.set('rules', {bytes: RULE_BYTES, label: RULE_LABEL}); }
-// 用目前命名規則重新命名已辨識（未確認）的檔案，不必重新辨識
+// 用目前檔名規則重新命名已辨識（未確認）的檔案，不必重新辨識
 function reapplyNaming(){
   let n = 0;
   for(const it of ITEMS){
@@ -2863,7 +2921,7 @@ function reapplyNaming(){
   renderList(); renderDetail(); updateProg(); saveSession();
   return n;
 }
-$('reapply').onclick = () => { const n = reapplyNaming(); $('setMsg').textContent = ''; toastOut(`已用目前的命名規則重新命名 ${n} 份（已確認的不變）`); $('ruleErr').textContent = (RULES.errors || []).join('\n') || `已重新命名 ${n} 份（已確認的不變）`; };
+$('reapply').onclick = () => { const n = reapplyNaming(); $('setMsg').textContent = ''; toastOut(`已用目前的檔名規則重新命名 ${n} 份（已確認的不變）`); $('ruleErr').textContent = (RULES.errors || []).join('\n') || `已重新命名 ${n} 份（已確認的不變）`; };
 $('impRules').onclick = () => $('ruleIn').click();
 $('ruleIn').onchange = async () => {
   const f = $('ruleIn').files[0]; $('ruleIn').value = ''; if(!f) return;
@@ -2875,7 +2933,7 @@ $('ruleIn').onchange = async () => {
   }catch(e){ alert('規則檔讀取失敗：' + (e.message || e)); }
 };
 $('resetRules').onclick = async () => { await KV.del('rules'); await loadRules(b64bytes(RULES_XLSX_B64), `內建 規則.xlsx（${RULES_XLSX_DATE}）`); };
-$('dlRules').onclick = () => { if(RULE_SAVE_T) saveNaming(); saveBytes('規則.xlsx', RULE_BYTES, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '.xlsx'); };
+$('dlRules').onclick = () => { if(RULE_SAVE_T) saveNaming(); saveBytes(`命名系統_檔名規則_${stamp().slice(0, 8)}.xlsx`, RULE_BYTES, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '.xlsx'); };
 
 // ===== 辨識引擎（Tesseract，多個背景執行緒） =====
 // 共用一個 PDF 背景執行緒，明確傳給每份文件；文件關閉時不會連帶關掉它（多份同時處理時不會出錯）
@@ -2932,7 +2990,7 @@ const Pool = {
 };
 addEventListener('pagehide', () => Pool.stop());
 
-// ===== 目的資料夾（共用「目的資料夾規則」） =====
+// ===== 目的資料夾（共用「歸檔規則」） =====
 function applyDest(it){
   const r = it.row;
   if(['待處理', '處理中', '錯誤'].includes(it.status)) return;
@@ -3822,8 +3880,8 @@ function refreshCode(){
     const pend = it => !it.dirManual && it.dst && it.dst.path_status === '待確認';
     use = list.filter(it => it.row['目的資料夾'].trim() && !pend(it));
     const no = list.filter(it => !it.row['目的資料夾'].trim()).length, pn = list.filter(it => it.row['目的資料夾'].trim() && pend(it)).length;
-    if(no) note += `　有 ${no} 份沒有目的資料夾（目的資料夾規則判為「不歸檔」或「人工」），不在程式碼內；可在右側手動填目的資料夾，或改選「執行時選一個資料夾」。`;
-    if(pn) note += `　有 ${pn} 份的目的地路徑「待確認」，不在程式碼內；請先到「目的資料夾規則」確認資料夾後改為「現有」，或在右側手動填目的資料夾。`;
+    if(no) note += `　有 ${no} 份沒有目的資料夾（歸檔規則判為「不歸檔」或「人工」），不在程式碼內；可在右側手動填目的資料夾，或改選「執行時選一個資料夾」。`;
+    if(pn) note += `　有 ${pn} 份的目的地路徑「待確認」，不在程式碼內；請先到「歸檔規則」確認資料夾後改為「現有」，或在右側手動填目的資料夾。`;
   }
   const key = it => (mode === 'dest' ? it.row['目的資料夾'].trim().replace(/[\\/]+$/, '') + '\\' : '') + finalName(it);
   const dup = use.length - new Set(use.map(it => key(it).toLowerCase())).size;
@@ -3875,7 +3933,7 @@ $('savePlan').onclick = async () => {
   const plan = [], seen = {}, skipped = [];
   for(const it of list){
     const old = fullPath(it), name = finalName(it), folder = it.row['目的資料夾'].trim().replace(/[\\/]+$/, '');
-    const why = !old ? '缺原路徑' : !folder ? (it.row['分送動作'] && it.row['分送動作'] !== '搬移' ? `目的資料夾規則判定為「${it.row['分送動作']}」` : '缺目的資料夾') : '';
+    const why = !old ? '缺原路徑' : !folder ? (it.row['分送動作'] && it.row['分送動作'] !== '搬移' ? `歸檔規則判定為「${it.row['分送動作']}」` : '缺目的資料夾') : '';
     if(why){ skipped.push(`${it.rel}：${why}`); continue; }
     const nw = folder + '\\' + name, key = nw.toLowerCase();
     let act = '搬移', reason = `OCR命名：${it.row['文件類別']}`;
@@ -3930,14 +3988,14 @@ addEventListener('beforeunload', () => { clearTimeout(SAVE_T); });
   renderList(); updateProg();
 })();
 
-// ===== 規則實驗室：用素材索引裡已命名、已歸檔的檔案當正確答案，測試命名與目的資料夾規則（也可比較兩種辨識引擎） =====
+// ===== 規則實驗室：用素材索引裡已命名、已歸檔的檔案當正確答案，測試命名與歸檔規則（也可比較兩種辨識引擎） =====
 // 放在文字辨識命名的程式區塊內，直接使用 extractText、Engine、RULES、SET、tidyOcr、saveBytes、needRetry；
 // 索引資料用全域的 SOURCES、CUR_RAW、rootOfRaw、DirStore；目的資料夾用 destOf
 (() => {
   const L = id => document.getElementById('lab_' + id);
   const ENG = {tesseract: 'Tesseract', paddle: 'PaddleOCR'};
   const EX_KEY = '檔案整理_實驗室排除', DIR_KEY = '實驗室資料夾';
-  let SAMPLES = [], RUN = false, STOPPED = false, HIT = null;   // HIT：所選範圍可用的資料夾權限 {h, base}
+  let SAMPLES = [], RUN = false, STOPPED = false, HIT = null, ROOTOF = new Map();   // HIT：所選範圍可用的資料夾權限 {h, base}
   const escH = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
   const normName = s => String(s || '').normalize('NFKC').replace(/\.[A-Za-z0-9]{2,5}$/, '').replace(/[\s_\-－—–()（）「」『』【】\[\]、，,.。:：;；]/g, '').toLowerCase();
   const pct = (a, b) => b ? Math.round(a * 100 / b) + '%' : '—';
@@ -3971,7 +4029,8 @@ addEventListener('beforeunload', () => { clearTimeout(SAVE_T); });
     return out;
   }
   function refresh(){
-    const list = folderList(), sel = L('folder'), cur = sel.value || localStorage.getItem('檔案整理_實驗室範圍') || '';
+    const list = folderList(); ROOTOF = new Map(list.map(f => [lc(f.path), f.root]));
+    const sel = L('folder'), cur = sel.value || localStorage.getItem('檔案整理_實驗室範圍') || '';
     sel.innerHTML = list.length ? list.map(f => `<option value="${escH(f.path)}"${lc(f.path) === lc(cur) ? ' selected' : ''}>${f.depth ? '　'.repeat(f.depth) + '└ ' + escH(f.path.split('\\').pop()) : escH(f.path)}（${f.n.toLocaleString()} 份）</option>`).join('') : '<option value="">（請先到「素材索引」匯入檔案清單）</option>';
     sel.disabled = !list.length; L('pick').disabled = !list.length || RUN;
     L('pinfo').textContent = list.length ? '從已匯入「素材索引」的檔案清單中選範圍（個人資料夾不列入）。' : '請先到「素材索引」匯入檔案清單 CSV，或用「從資料夾讀取」。';
@@ -3989,8 +4048,14 @@ addEventListener('beforeunload', () => { clearTimeout(SAVE_T); });
     for(const r of recs) if(under(path, r.base) && (!HIT || r.base.length > HIT.base.length)) HIT = {h: r.handle, base: r.base};
     if(L('folder').value !== path) return;
     const leaf = path.split('\\').pop();
-    L('dinfo').innerHTML = HIT ? `已記住「${escH(HIT.base.split('\\').pop())}」資料夾，按「抽樣並讀取」即可（瀏覽器可能再問一次是否允許讀取）。`
-      : `第一次讀取這個範圍：按「抽樣並讀取」後會開啟資料夾視窗，請選「<b>${escH(leaf)}</b>」（或它的上層資料夾），之後就會記住。只讀取，不會修改或搬移任何檔案。`;
+    const root = ROOTOF.get(lc(path)) || path;
+    L('dinfo').innerHTML = HIT ? `已記住「${escH(HIT.base)}」，按「抽樣並讀取」就直接讀取，不必再選資料夾（每次開啟網頁，瀏覽器可能先問一次是否允許，按「允許」即可）。`
+      : `第一次使用：按「抽樣並讀取」時會<b>自動複製</b>路徑 <code>${escH(root)}</code> 並開啟資料夾視窗，在視窗下方「資料夾」欄按 <b>Ctrl＋V</b>、<b>Enter</b>，再按「選擇資料夾」。選這個最上層資料夾後，清單裡所有資料夾以後都不必再選。只讀取，不會修改或搬移任何檔案。`;
+  }
+  function copyText(s){
+    try{ if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(s).catch(() => legacy()); return; } }catch(_){}
+    legacy();
+    function legacy(){ try{ const ta = document.createElement('textarea'); ta.value = s; ta.style.cssText = 'position:fixed;left:-9999px'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }catch(_){} }
   }
   async function rememberDir(h, base){
     const mine = (await DirStore.get(DIR_KEY)) || {list: []};
@@ -4012,6 +4077,10 @@ addEventListener('beforeunload', () => { clearTimeout(SAVE_T); });
     }
     if(!root){
       let h;
+      // 網頁不能直接用路徑開資料夾（瀏覽器安全限制），只能請使用者在視窗中選一次；先把路徑複製到剪貼簿，在視窗貼上即可
+      const root0 = ROOTOF.get(lc(path)) || path;
+      copyText(root0);
+      L('dinfo').innerHTML = `已複製 <code>${escH(root0)}</code>：在資料夾視窗下方「資料夾」欄按 <b>Ctrl＋V</b>、<b>Enter</b>，再按「選擇資料夾」。`;
       try{ h = await showDirectoryPicker({id: 'lab', mode: 'read'}); }catch(e){ if(e.name !== 'AbortError') alert('無法開啟資料夾：' + (e.message || e)); return; }
       const seg = path.split('\\'); let k = -1;
       for(let i = seg.length - 1; i >= 0; i--) if(lc(seg[i]) === lc(h.name)){ k = i; break; }
